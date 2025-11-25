@@ -327,7 +327,7 @@ export default function AdminOrdersPage() {
     })
   }
 
-  const updateOrderItem = (index: number, field: string, value: any) => {
+  const updateOrderItem = (index: number, field: string, value: string | number) => {
     const updatedItems = [...newOrderForm.items]
     updatedItems[index] = { ...updatedItems[index], [field]: value }
     setNewOrderForm({ ...newOrderForm, items: updatedItems })
