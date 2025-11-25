@@ -1,5 +1,8 @@
+'use client'
+
+import { useState, useRef } from "react"
 import Link from "next/link"
-import { Search, Filter, Eye, MoreVertical, Download, Printer } from "lucide-react"
+import { Search, Filter, Eye, MoreVertical, Download, Printer, Plus, Mail, X } from "lucide-react"
 import { Card, CardContent } from "../../components/ui/card"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
@@ -8,9 +11,34 @@ import { Checkbox } from "../../components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../../components/ui/dialog"
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "../../components/ui/sheet"
+import { Label } from "../../components/ui/label"
+import { Textarea } from "../../components/ui/textarea"
 import { formatPrice } from "../../lib/utils/format"
 
-const orders = [
+interface OrderItem {
+  id: string
+  name: string
+  quantity: number
+  price: number
+}
+
+interface Order {
+  id: string
+  customer: string
+  email: string
+  items: number
+  total: number
+  status: string
+  payment: string
+  date: string
+  address?: string
+  phone?: string
+  orderItems?: OrderItem[]
+}
+
+const initialOrders: Order[] = [
   {
     id: "ORD-2024-001",
     customer: "John Doe",
@@ -20,6 +48,12 @@ const orders = [
     status: "Processing",
     payment: "Paid",
     date: "Nov 20, 2024",
+    address: "123 Main Street, Dhaka, Bangladesh",
+    phone: "+880 1234567890",
+    orderItems: [
+      { id: "1", name: "iPhone 15 Pro Max", quantity: 1, price: 129999 },
+      { id: "2", name: "Sony WH-1000XM5", quantity: 1, price: 29999 },
+    ],
   },
   {
     id: "ORD-2024-002",
@@ -30,6 +64,11 @@ const orders = [
     status: "Shipped",
     payment: "Paid",
     date: "Nov 19, 2024",
+    address: "456 Oak Avenue, Chittagong, Bangladesh",
+    phone: "+880 9876543210",
+    orderItems: [
+      { id: "3", name: "iPad Pro 12.9", quantity: 1, price: 49999 },
+    ],
   },
   {
     id: "ORD-2024-003",
@@ -40,6 +79,11 @@ const orders = [
     status: "Delivered",
     payment: "Paid",
     date: "Nov 18, 2024",
+    address: "789 Pine Road, Sylhet, Bangladesh",
+    phone: "+880 5555555555",
+    orderItems: [
+      { id: "4", name: "Samsung Galaxy S24 Ultra", quantity: 1, price: 89999 },
+    ],
   },
   {
     id: "ORD-2024-004",
@@ -50,6 +94,11 @@ const orders = [
     status: "Pending",
     payment: "Pending",
     date: "Nov 17, 2024",
+    address: "321 Elm Street, Rajshahi, Bangladesh",
+    phone: "+880 3333333333",
+    orderItems: [
+      { id: "5", name: "Wireless Earbuds", quantity: 1, price: 15999 },
+    ],
   },
   {
     id: "ORD-2024-005",
@@ -60,6 +109,12 @@ const orders = [
     status: "Cancelled",
     payment: "Refunded",
     date: "Nov 16, 2024",
+    address: "654 Birch Lane, Khulna, Bangladesh",
+    phone: "+880 7777777777",
+    orderItems: [
+      { id: "6", name: "MacBook Air M3", quantity: 1, price: 79999 },
+      { id: "7", name: "Magic Mouse", quantity: 1, price: 10000 },
+    ],
   },
 ]
 
@@ -94,6 +149,92 @@ function getPaymentColor(payment: string) {
 }
 
 export default function AdminOrdersPage() {
+  const [orders, setOrders] = useState<Order[]>(initialOrders)
+  const [viewOpen, setViewOpen] = useState(false)
+  const [addDrawerOpen, setAddDrawerOpen] = useState(false)
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const printRef = useRef<HTMLDivElement>(null)
+  const [newOrderForm, setNewOrderForm] = useState({
+    customer: "",
+    email: "",
+    phone: "",
+    address: "",
+    items: [{ name: "", quantity: 1, price: 0 }],
+    status: "Pending",
+    payment: "Pending",
+  })
+
+  const handleViewClick = (order: Order) => {
+    setSelectedOrder(order)
+    setViewOpen(true)
+  }
+
+  const handlePrintInvoice = (order: Order) => {
+    setSelectedOrder(order)
+    setTimeout(() => {
+      if (printRef.current) {
+        window.print()
+      }
+    }, 100)
+  }
+
+  const handleSendInvoiceEmail = (order: Order) => {
+    alert(`Invoice email sent to ${order.email}`)
+  }
+
+  const handleAddOrder = () => {
+    const totalAmount = newOrderForm.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+    const newOrder: Order = {
+      id: `ORD-2024-${String(orders.length + 1).padStart(3, "0")}`,
+      customer: newOrderForm.customer,
+      email: newOrderForm.email,
+      items: newOrderForm.items.length,
+      total: totalAmount,
+      status: newOrderForm.status,
+      payment: newOrderForm.payment,
+      date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
+      address: newOrderForm.address,
+      phone: newOrderForm.phone,
+      orderItems: newOrderForm.items.map((item, idx) => ({
+        id: String(idx),
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+    }
+    setOrders([newOrder, ...orders])
+    setAddDrawerOpen(false)
+    setNewOrderForm({
+      customer: "",
+      email: "",
+      phone: "",
+      address: "",
+      items: [{ name: "", quantity: 1, price: 0 }],
+      status: "Pending",
+      payment: "Pending",
+    })
+  }
+
+  const addOrderItem = () => {
+    setNewOrderForm({
+      ...newOrderForm,
+      items: [...newOrderForm.items, { name: "", quantity: 1, price: 0 }],
+    })
+  }
+
+  const removeOrderItem = (index: number) => {
+    setNewOrderForm({
+      ...newOrderForm,
+      items: newOrderForm.items.filter((_, i) => i !== index),
+    })
+  }
+
+  const updateOrderItem = (index: number, field: string, value: any) => {
+    const updatedItems = [...newOrderForm.items]
+    updatedItems[index] = { ...updatedItems[index], [field]: value }
+    setNewOrderForm({ ...newOrderForm, items: updatedItems })
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -102,6 +243,10 @@ export default function AdminOrdersPage() {
           <p className="text-muted-foreground">Manage and process customer orders.</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" className="gap-2 bg-transparent" onClick={() => setAddDrawerOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Add Order
+          </Button>
           <Button variant="outline" className="gap-2 bg-transparent">
             <Download className="h-4 w-4" />
             Export
@@ -200,13 +345,17 @@ export default function AdminOrdersPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleViewClick(order)}>
                                 <Eye className="mr-2 h-4 w-4" />
                                 View Details
                               </DropdownMenuItem>
-                              <DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handlePrintInvoice(order)}>
                                 <Printer className="mr-2 h-4 w-4" />
                                 Print Invoice
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleSendInvoiceEmail(order)}>
+                                <Mail className="mr-2 h-4 w-4" />
+                                Send Invoice
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -232,6 +381,335 @@ export default function AdminOrdersPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* View Details Modal */}
+      <Dialog open={viewOpen} onOpenChange={setViewOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Order Details</DialogTitle>
+            <DialogDescription>Complete order information and items</DialogDescription>
+          </DialogHeader>
+          {selectedOrder && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground text-xs uppercase">Order ID</Label>
+                  <p className="mt-1 font-medium">{selectedOrder.id}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs uppercase">Order Date</Label>
+                  <p className="mt-1 font-medium">{selectedOrder.date}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4 rounded-lg border border-border p-4">
+                <h3 className="font-semibold">Customer Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">Name</Label>
+                    <p className="mt-1 font-medium">{selectedOrder.customer}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">Email</Label>
+                    <p className="mt-1 font-medium text-sm">{selectedOrder.email}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">Phone</Label>
+                    <p className="mt-1 font-medium">{selectedOrder.phone}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">Address</Label>
+                    <p className="mt-1 font-medium text-sm">{selectedOrder.address}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4 rounded-lg border border-border p-4">
+                <h3 className="font-semibold">Order Items</h3>
+                <div className="space-y-3">
+                  {selectedOrder.orderItems?.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between border-b pb-3 last:border-b-0">
+                      <div>
+                        <p className="font-medium">{item.name}</p>
+                        <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                      </div>
+                      <p className="font-medium">{formatPrice(item.price * item.quantity)}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-4 rounded-lg border border-border p-4">
+                <h3 className="font-semibold">Order Status</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">Status</Label>
+                    <div className="mt-1">
+                      <Badge variant="secondary" className={getStatusColor(selectedOrder.status)}>
+                        {selectedOrder.status}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">Payment</Label>
+                    <div className="mt-1">
+                      <Badge variant="secondary" className={getPaymentColor(selectedOrder.payment)}>
+                        {selectedOrder.payment}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-lg bg-muted p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-semibold">Total Amount:</span>
+                  <span className="text-lg font-bold">{formatPrice(selectedOrder.total)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Manual Order Drawer */}
+      <Sheet open={addDrawerOpen} onOpenChange={setAddDrawerOpen}>
+        <SheetContent side="right" className="w-full sm:w-[600px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Add Manual Order</SheetTitle>
+            <SheetDescription>Create a new order manually</SheetDescription>
+          </SheetHeader>
+
+          <div className="space-y-6 py-4">
+            <div className="space-y-4">
+              <h3 className="font-semibold">Customer Information</h3>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="order-customer">Customer Name</Label>
+                  <Input
+                    id="order-customer"
+                    value={newOrderForm.customer}
+                    onChange={(e) => setNewOrderForm({ ...newOrderForm, customer: e.target.value })}
+                    placeholder="Enter customer name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="order-email">Email</Label>
+                  <Input
+                    id="order-email"
+                    type="email"
+                    value={newOrderForm.email}
+                    onChange={(e) => setNewOrderForm({ ...newOrderForm, email: e.target.value })}
+                    placeholder="Enter customer email"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="order-phone">Phone</Label>
+                  <Input
+                    id="order-phone"
+                    value={newOrderForm.phone}
+                    onChange={(e) => setNewOrderForm({ ...newOrderForm, phone: e.target.value })}
+                    placeholder="Enter customer phone"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="order-address">Address</Label>
+                  <Textarea
+                    id="order-address"
+                    value={newOrderForm.address}
+                    onChange={(e) => setNewOrderForm({ ...newOrderForm, address: e.target.value })}
+                    placeholder="Enter delivery address"
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold">Order Items</h3>
+                <Button size="sm" variant="outline" onClick={addOrderItem} className="gap-1">
+                  <Plus className="h-4 w-4" />
+                  Add Item
+                </Button>
+              </div>
+              <div className="space-y-3">
+                {newOrderForm.items.map((item, index) => (
+                  <div key={index} className="space-y-2 rounded-lg border border-border p-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">Item {index + 1}</Label>
+                      {newOrderForm.items.length > 1 && (
+                        <button onClick={() => removeOrderItem(index)} className="text-destructive hover:text-destructive/80">
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="col-span-2 space-y-1">
+                        <Label htmlFor={`item-name-${index}`} className="text-xs">
+                          Product Name
+                        </Label>
+                        <Input
+                          id={`item-name-${index}`}
+                          value={item.name}
+                          onChange={(e) => updateOrderItem(index, "name", e.target.value)}
+                          placeholder="Product name"
+                          className="text-sm"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor={`item-qty-${index}`} className="text-xs">
+                          Qty
+                        </Label>
+                        <Input
+                          id={`item-qty-${index}`}
+                          type="number"
+                          value={item.quantity}
+                          onChange={(e) => updateOrderItem(index, "quantity", Number(e.target.value))}
+                          min="1"
+                          className="text-sm"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor={`item-price-${index}`} className="text-xs">
+                        Price
+                      </Label>
+                      <Input
+                        id={`item-price-${index}`}
+                        type="number"
+                        value={item.price}
+                        onChange={(e) => updateOrderItem(index, "price", Number(e.target.value))}
+                        placeholder="0"
+                        className="text-sm"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="font-semibold">Order Status</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="order-status">Status</Label>
+                  <Select value={newOrderForm.status} onValueChange={(value) => setNewOrderForm({ ...newOrderForm, status: value })}>
+                    <SelectTrigger id="order-status">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Processing">Processing</SelectItem>
+                      <SelectItem value="Shipped">Shipped</SelectItem>
+                      <SelectItem value="Delivered">Delivered</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="order-payment">Payment Status</Label>
+                  <Select value={newOrderForm.payment} onValueChange={(value) => setNewOrderForm({ ...newOrderForm, payment: value })}>
+                    <SelectTrigger id="order-payment">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Paid">Paid</SelectItem>
+                      <SelectItem value="Refunded">Refunded</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-lg bg-muted p-4">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold">Total Amount:</span>
+                <span className="text-lg font-bold">
+                  {formatPrice(newOrderForm.items.reduce((sum, item) => sum + item.price * item.quantity, 0))}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <SheetFooter>
+            <Button variant="outline" onClick={() => setAddDrawerOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddOrder}>Create Order</Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+
+      {/* Print Invoice Template (Hidden) */}
+      <div className="hidden" ref={printRef}>
+        {selectedOrder && (
+          <div className="p-8 bg-white">
+            <div className="mb-8 text-center">
+              <h1 className="text-3xl font-bold">INVOICE</h1>
+              <p className="text-muted-foreground">{selectedOrder.id}</p>
+            </div>
+
+            <div className="mb-8 grid grid-cols-2 gap-8">
+              <div>
+                <h3 className="font-semibold mb-2">From:</h3>
+                <p className="font-bold">Your Store Name</p>
+                <p className="text-sm text-muted-foreground">123 Business Street</p>
+                <p className="text-sm text-muted-foreground">City, Country</p>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-2">Bill To:</h3>
+                <p className="font-bold">{selectedOrder.customer}</p>
+                <p className="text-sm text-muted-foreground">{selectedOrder.email}</p>
+                <p className="text-sm text-muted-foreground">{selectedOrder.phone}</p>
+                <p className="text-sm text-muted-foreground">{selectedOrder.address}</p>
+              </div>
+            </div>
+
+            <div className="mb-8">
+              <table className="w-full border-collapse border border-gray-300">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border border-gray-300 p-2 text-left">Item</th>
+                    <th className="border border-gray-300 p-2 text-right">Qty</th>
+                    <th className="border border-gray-300 p-2 text-right">Price</th>
+                    <th className="border border-gray-300 p-2 text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedOrder.orderItems?.map((item) => (
+                    <tr key={item.id}>
+                      <td className="border border-gray-300 p-2">{item.name}</td>
+                      <td className="border border-gray-300 p-2 text-right">{item.quantity}</td>
+                      <td className="border border-gray-300 p-2 text-right">{formatPrice(item.price)}</td>
+                      <td className="border border-gray-300 p-2 text-right">{formatPrice(item.price * item.quantity)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex justify-end mb-8">
+              <div className="w-64">
+                <div className="flex justify-between mb-2 border-t-2 border-gray-300 pt-2">
+                  <span className="font-semibold">Total:</span>
+                  <span className="font-bold">{formatPrice(selectedOrder.total)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-center text-sm text-muted-foreground">
+              <p>Thank you for your business!</p>
+              <p>Generated on {new Date().toLocaleDateString()}</p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
