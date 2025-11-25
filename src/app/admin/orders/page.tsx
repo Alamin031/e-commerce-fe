@@ -170,12 +170,111 @@ export default function AdminOrdersPage() {
   }
 
   const handlePrintInvoice = (order: Order) => {
-    setSelectedOrder(order)
-    setTimeout(() => {
-      if (printRef.current) {
-        window.print()
-      }
-    }, 100)
+    const printWindow = window.open("", "", "height=600,width=800")
+    if (printWindow) {
+      const invoiceHTML = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Invoice - ${order.id}</title>
+            <style>
+              * { margin: 0; padding: 0; box-sizing: border-box; }
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background: white; }
+              .invoice-container { max-width: 800px; margin: 0 auto; padding: 40px; }
+              .header { text-align: center; margin-bottom: 40px; }
+              .header h1 { font-size: 32px; font-weight: bold; margin-bottom: 5px; }
+              .header p { color: #666; font-size: 14px; }
+              .invoice-details { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+              .invoice-section h3 { font-weight: bold; margin-bottom: 10px; font-size: 14px; }
+              .invoice-section p { font-size: 13px; color: #666; line-height: 1.8; }
+              .invoice-section .label { font-weight: bold; }
+              table { width: 100%; border-collapse: collapse; margin: 30px 0; }
+              table thead { background-color: #f5f5f5; }
+              table th { padding: 12px; text-align: left; font-weight: bold; border-bottom: 2px solid #ddd; }
+              table td { padding: 12px; border-bottom: 1px solid #eee; }
+              table tr:last-child td { border-bottom: 2px solid #ddd; }
+              .total-section { display: flex; justify-content: flex-end; margin-top: 30px; margin-bottom: 30px; }
+              .total-box { width: 300px; padding: 20px; border-top: 2px solid #333; }
+              .total-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
+              .total-row.final { font-size: 18px; font-weight: bold; border-top: 1px solid #ddd; padding-top: 10px; }
+              .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 12px; }
+              @media print { body { margin: 0; padding: 0; } .invoice-container { padding: 20px; } }
+            </style>
+          </head>
+          <body>
+            <div class="invoice-container">
+              <div class="header">
+                <h1>INVOICE</h1>
+                <p>${order.id}</p>
+              </div>
+
+              <div class="invoice-details">
+                <div class="invoice-section">
+                  <h3>From:</h3>
+                  <p><span class="label">Your Store Name</span><br>123 Business Street<br>Dhaka, Bangladesh</p>
+                </div>
+                <div class="invoice-section">
+                  <h3>Bill To:</h3>
+                  <p>
+                    <span class="label">${order.customer}</span><br>
+                    ${order.email}<br>
+                    ${order.phone}<br>
+                    ${order.address}
+                  </p>
+                </div>
+              </div>
+
+              <table>
+                <thead>
+                  <tr>
+                    <th>Product Name</th>
+                    <th style="text-align: right; width: 80px;">Qty</th>
+                    <th style="text-align: right; width: 100px;">Price</th>
+                    <th style="text-align: right; width: 120px;">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${order.orderItems?.map((item) => `
+                    <tr>
+                      <td>${item.name}</td>
+                      <td style="text-align: right;">${item.quantity}</td>
+                      <td style="text-align: right;">৳ ${item.price.toLocaleString("en-BD")}</td>
+                      <td style="text-align: right;">৳ ${(item.price * item.quantity).toLocaleString("en-BD")}</td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+
+              <div class="total-section">
+                <div class="total-box">
+                  <div class="total-row">
+                    <span>Subtotal:</span>
+                    <span>৳ ${order.total.toLocaleString("en-BD")}</span>
+                  </div>
+                  <div class="total-row final">
+                    <span>Total:</span>
+                    <span>৳ ${order.total.toLocaleString("en-BD")}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style="margin: 30px 0; padding: 20px; background-color: #f9f9f9; border-radius: 5px;">
+                <p><strong>Status:</strong> ${order.status}</p>
+                <p><strong>Payment Status:</strong> ${order.payment}</p>
+              </div>
+
+              <div class="footer">
+                <p>Thank you for your business!</p>
+                <p>Invoice generated on ${new Date().toLocaleDateString("en-BD", { year: "numeric", month: "long", day: "numeric" })}</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `
+      printWindow.document.write(invoiceHTML)
+      printWindow.document.close()
+      printWindow.print()
+    }
   }
 
   const handleSendInvoiceEmail = (order: Order) => {
