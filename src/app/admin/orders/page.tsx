@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { Search, Filter, Eye, MoreVertical, Download, Printer, Plus, Mail, X } from "lucide-react"
 import { Card, CardContent } from "../../components/ui/card"
@@ -153,7 +153,6 @@ export default function AdminOrdersPage() {
   const [viewOpen, setViewOpen] = useState(false)
   const [addDrawerOpen, setAddDrawerOpen] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
-  const printRef = useRef<HTMLDivElement>(null)
   const [newOrderForm, setNewOrderForm] = useState({
     customer: "",
     email: "",
