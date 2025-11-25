@@ -78,8 +78,10 @@ export default function AdminCategoriesPage() {
   const [viewOpen, setViewOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [addSubcategoryOpen, setAddSubcategoryOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
   const [editFormData, setEditFormData] = useState<Category | null>(null)
+  const [subcategoryFormData, setSubcategoryFormData] = useState({ name: "", products: 0 })
 
   const handleViewClick = (category: Category) => {
     setSelectedCategory(category)
