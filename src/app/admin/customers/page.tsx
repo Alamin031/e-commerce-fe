@@ -1,14 +1,37 @@
+'use client'
+
+import { useState } from "react"
 import Image from "next/image"
-import { Search, Filter, MoreVertical, Mail, Eye, Ban } from "lucide-react"
+import { Search, Filter, MoreVertical, Mail, Eye, Ban, Edit, Trash2, Send } from "lucide-react"
 import { Card, CardContent } from "../../components/ui/card"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Badge } from "../../components/ui/badge"
 import { Checkbox } from "../../components/ui/checkbox"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../components/ui/dropdown-menu"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../../components/ui/dialog"
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "../../components/ui/sheet"
+import { Label } from "../../components/ui/label"
+import { Textarea } from "../../components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "../../components/ui/alert-dialog"
 import { formatPrice } from "../../lib/utils/format"
 
-const customers = [
+interface Customer {
+  id: string
+  name: string
+  email: string
+  avatar: string
+  orders: number
+  totalSpent: number
+  lastOrder: string
+  status: string
+  phone?: string
+  address?: string
+  joinDate?: string
+}
+
+const initialCustomers: Customer[] = [
   {
     id: "1",
     name: "John Doe",
@@ -18,6 +41,9 @@ const customers = [
     totalSpent: 456789,
     lastOrder: "Nov 20, 2024",
     status: "Active",
+    phone: "+880 1234567890",
+    address: "123 Main Street, Dhaka, Bangladesh",
+    joinDate: "Jan 15, 2023",
   },
   {
     id: "2",
@@ -28,6 +54,9 @@ const customers = [
     totalSpent: 234567,
     lastOrder: "Nov 19, 2024",
     status: "Active",
+    phone: "+880 9876543210",
+    address: "456 Oak Avenue, Chittagong, Bangladesh",
+    joinDate: "Feb 20, 2023",
   },
   {
     id: "3",
@@ -38,6 +67,9 @@ const customers = [
     totalSpent: 79999,
     lastOrder: "Nov 15, 2024",
     status: "Active",
+    phone: "+880 5555555555",
+    address: "789 Pine Road, Sylhet, Bangladesh",
+    joinDate: "Mar 10, 2023",
   },
   {
     id: "4",
@@ -48,6 +80,9 @@ const customers = [
     totalSpent: 15999,
     lastOrder: "Nov 10, 2024",
     status: "Inactive",
+    phone: "+880 3333333333",
+    address: "321 Elm Street, Rajshahi, Bangladesh",
+    joinDate: "Apr 05, 2023",
   },
   {
     id: "5",
@@ -58,10 +93,82 @@ const customers = [
     totalSpent: 0,
     lastOrder: "-",
     status: "Blocked",
+    phone: "+880 7777777777",
+    address: "654 Birch Lane, Khulna, Bangladesh",
+    joinDate: "May 12, 2023",
   },
 ]
 
 export default function AdminCustomersPage() {
+  const [customers, setCustomers] = useState<Customer[]>(initialCustomers)
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+  const [viewOpen, setViewOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [emailOpen, setEmailOpen] = useState(false)
+  const [blockOpen, setBlockOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [editFormData, setEditFormData] = useState<Customer | null>(null)
+  const [emailFormData, setEmailFormData] = useState({ subject: "", message: "" })
+
+  const handleViewClick = (customer: Customer) => {
+    setSelectedCustomer(customer)
+    setViewOpen(true)
+  }
+
+  const handleEditClick = (customer: Customer) => {
+    setSelectedCustomer(customer)
+    setEditFormData({ ...customer })
+    setEditOpen(true)
+  }
+
+  const handleEmailClick = (customer: Customer) => {
+    setSelectedCustomer(customer)
+    setEmailFormData({ subject: "", message: "" })
+    setEmailOpen(true)
+  }
+
+  const handleBlockClick = (customer: Customer) => {
+    setSelectedCustomer(customer)
+    setBlockOpen(true)
+  }
+
+  const handleDeleteClick = (customer: Customer) => {
+    setSelectedCustomer(customer)
+    setDeleteOpen(true)
+  }
+
+  const handleSaveEdit = () => {
+    if (editFormData) {
+      setCustomers(customers.map((c) => (c.id === editFormData.id ? editFormData : c)))
+      setEditOpen(false)
+      setEditFormData(null)
+    }
+  }
+
+  const handleSendEmail = () => {
+    if (selectedCustomer && emailFormData.subject && emailFormData.message) {
+      alert(`Email sent to ${selectedCustomer.email}\n\nSubject: ${emailFormData.subject}`)
+      setEmailOpen(false)
+    }
+  }
+
+  const handleBlockCustomer = () => {
+    if (selectedCustomer) {
+      setCustomers(
+        customers.map((c) => (c.id === selectedCustomer.id ? { ...c, status: "Blocked" } : c))
+      )
+      setBlockOpen(false)
+    }
+  }
+
+  const handleConfirmDelete = () => {
+    if (selectedCustomer) {
+      setCustomers(customers.filter((c) => c.id !== selectedCustomer.id))
+      setDeleteOpen(false)
+      setSelectedCustomer(null)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -78,13 +185,13 @@ export default function AdminCustomersPage() {
       <div className="grid gap-4 sm:grid-cols-4">
         <Card>
           <CardContent className="p-6">
-            <p className="text-2xl font-bold">5,678</p>
+            <p className="text-2xl font-bold">{customers.length}</p>
             <p className="text-sm text-muted-foreground">Total Customers</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-6">
-            <p className="text-2xl font-bold">4,532</p>
+            <p className="text-2xl font-bold">{customers.filter((c) => c.status === "Active").length}</p>
             <p className="text-sm text-muted-foreground">Active Customers</p>
           </CardContent>
         </Card>
@@ -178,17 +285,25 @@ export default function AdminCustomersPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleViewClick(customer)}>
                             <Eye className="mr-2 h-4 w-4" />
                             View Profile
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditClick(customer)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEmailClick(customer)}>
                             <Mail className="mr-2 h-4 w-4" />
                             Send Email
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
+                          <DropdownMenuItem onClick={() => handleBlockClick(customer)}>
                             <Ban className="mr-2 h-4 w-4" />
                             Block User
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(customer)}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -200,7 +315,7 @@ export default function AdminCustomersPage() {
           </div>
 
           <div className="mt-6 flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">Showing 1-5 of 5,678 customers</p>
+            <p className="text-sm text-muted-foreground">Showing 1-5 of {customers.length} customers</p>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" disabled>
                 Previous
@@ -212,6 +327,254 @@ export default function AdminCustomersPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* View Profile Modal */}
+      <Dialog open={viewOpen} onOpenChange={setViewOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Customer Profile</DialogTitle>
+            <DialogDescription>View customer details and order history</DialogDescription>
+          </DialogHeader>
+          {selectedCustomer && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="h-20 w-20 overflow-hidden rounded-full bg-muted">
+                  <Image
+                    src={selectedCustomer.avatar || "/placeholder.svg"}
+                    alt={selectedCustomer.name}
+                    width={80}
+                    height={80}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-semibold">{selectedCustomer.name}</h2>
+                  <p className="text-muted-foreground">{selectedCustomer.email}</p>
+                  <Badge
+                    variant="secondary"
+                    className={
+                      selectedCustomer.status === "Active"
+                        ? "bg-green-500/10 text-green-600 mt-2"
+                        : selectedCustomer.status === "Inactive"
+                          ? "bg-yellow-500/10 text-yellow-600 mt-2"
+                          : "bg-red-500/10 text-red-600 mt-2"
+                    }
+                  >
+                    {selectedCustomer.status}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="space-y-4 rounded-lg border border-border p-4">
+                <h3 className="font-semibold">Contact Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">Phone</Label>
+                    <p className="mt-1 font-medium">{selectedCustomer.phone}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">Email</Label>
+                    <p className="mt-1 font-medium text-sm">{selectedCustomer.email}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <Label className="text-muted-foreground text-xs uppercase">Address</Label>
+                    <p className="mt-1 font-medium text-sm">{selectedCustomer.address}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4 rounded-lg border border-border p-4">
+                <h3 className="font-semibold">Order Summary</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">Total Orders</Label>
+                    <p className="mt-1 text-2xl font-bold">{selectedCustomer.orders}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">Total Spent</Label>
+                    <p className="mt-1 text-2xl font-bold">{formatPrice(selectedCustomer.totalSpent)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">Last Order</Label>
+                    <p className="mt-1 font-medium">{selectedCustomer.lastOrder}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-muted-foreground text-xs uppercase">Member Since</Label>
+                <p className="mt-1 font-medium">{selectedCustomer.joinDate}</p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Customer Modal */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Customer</DialogTitle>
+            <DialogDescription>Update customer information</DialogDescription>
+          </DialogHeader>
+          {editFormData && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Full Name</Label>
+                <Input
+                  id="edit-name"
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  placeholder="Enter full name"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-email">Email</Label>
+                  <Input
+                    id="edit-email"
+                    type="email"
+                    value={editFormData.email}
+                    onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                    placeholder="Enter email"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-phone">Phone</Label>
+                  <Input
+                    id="edit-phone"
+                    value={editFormData.phone}
+                    onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                    placeholder="Enter phone"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-address">Address</Label>
+                <Input
+                  id="edit-address"
+                  value={editFormData.address}
+                  onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                  placeholder="Enter address"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-status">Status</Label>
+                <Select value={editFormData.status} onValueChange={(value) => setEditFormData({ ...editFormData, status: value })}>
+                  <SelectTrigger id="edit-status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Inactive">Inactive</SelectItem>
+                    <SelectItem value="Blocked">Blocked</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEdit}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Email Drawer */}
+      <Sheet open={emailOpen} onOpenChange={setEmailOpen}>
+        <SheetContent side="right" className="w-full sm:w-[500px]">
+          <SheetHeader>
+            <SheetTitle>Send Email</SheetTitle>
+            <SheetDescription>
+              Send an email to {selectedCustomer?.name}
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="email-to">To</Label>
+              <Input
+                id="email-to"
+                value={selectedCustomer?.email}
+                disabled
+                className="bg-muted"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email-subject">Subject</Label>
+              <Input
+                id="email-subject"
+                value={emailFormData.subject}
+                onChange={(e) => setEmailFormData({ ...emailFormData, subject: e.target.value })}
+                placeholder="Enter email subject"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email-message">Message</Label>
+              <Textarea
+                id="email-message"
+                value={emailFormData.message}
+                onChange={(e) => setEmailFormData({ ...emailFormData, message: e.target.value })}
+                placeholder="Enter your message"
+                rows={6}
+              />
+            </div>
+          </div>
+
+          <SheetFooter>
+            <Button variant="outline" onClick={() => setEmailOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSendEmail} className="gap-2">
+              <Send className="h-4 w-4" />
+              Send Email
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+
+      {/* Block Customer Modal */}
+      <AlertDialog open={blockOpen} onOpenChange={setBlockOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Block Customer</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to block <span className="font-semibold">{selectedCustomer?.name}</span>? They will not be able to place orders or access their account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBlockCustomer} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Block Customer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Customer Modal */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Customer</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <span className="font-semibold">{selectedCustomer?.name}</span>? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
