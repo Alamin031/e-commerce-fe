@@ -2,9 +2,9 @@
 
 import Link from "next/link"
 import { Heart, ArrowRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { ProductCard } from "@/components/product/product-card"
-import { useWishlistStore } from "@/store/wishlist-store"
+import { Button } from "../../components/ui/button"
+import { ProductCard } from "../../components/product/product-card"
+import { useWishlistStore } from "../../store/wishlist-store"
 
 export function WishlistContent() {
   const { items, clearWishlist } = useWishlistStore()

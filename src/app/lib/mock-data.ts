@@ -1,4 +1,4 @@
-import type { Product, Category, Brand } from "@/types"
+import type { Product, Category, Brand } from "../types"
 
 export const mockBrands: Brand[] = [
   { id: "1", name: "Apple", slug: "apple", logo: "/apple-logo-minimalist.png" },
