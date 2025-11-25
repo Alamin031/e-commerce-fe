@@ -87,9 +87,9 @@ export function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-foreground">
-              <span className="text-lg font-bold text-background">G</span>
+              <span className="text-lg font-bold text-background">F</span>
             </div>
-            <span className="hidden text-xl font-semibold tracking-tight sm:inline-block">GadgetStore</span>
+            <span className="hidden text-xl font-semibold tracking-tight sm:inline-block">Friend&apos;s Telecom</span>
           </Link>
 
           {/* Desktop Navigation */}

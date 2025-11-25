@@ -83,9 +83,9 @@ export function Footer() {
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-foreground">
-                <span className="text-lg font-bold text-background">G</span>
+                <span className="text-lg font-bold text-background">F</span>
               </div>
-              <span className="text-xl font-semibold tracking-tight">GadgetStore</span>
+              <span className="text-xl font-semibold tracking-tight">Friend&apos;s Telecom</span>
             </Link>
             <p className="mt-4 text-sm text-muted-foreground">
               Your trusted destination for premium electronics and gadgets. Official products with warranty and
@@ -198,10 +198,10 @@ export function Footer() {
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-muted-foreground" />
                 <a
-                  href="mailto:support@gadgetstore.com"
+                  href="mailto:support@Friend's Telecom.com"
                   className="text-sm text-muted-foreground hover:text-foreground"
                 >
-                  support@gadgetstore.com
+                  support@Friend&apos;s Telecom.com
                 </a>
               </li>
             </ul>
@@ -214,7 +214,7 @@ export function Footer() {
         <div className="mx-auto max-w-7xl px-4 py-6">
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} GadgetStore. All rights reserved.
+              © {new Date().getFullYear()} Friend&apos;s Telecom. All rights reserved.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               {footerLinks.legal.map((link) => (
