@@ -404,6 +404,45 @@ export default function AdminCategoriesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Add Subcategory Modal */}
+      <Dialog open={addSubcategoryOpen} onOpenChange={setAddSubcategoryOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add Subcategory</DialogTitle>
+            <DialogDescription>
+              Add a new subcategory to <span className="font-semibold">{selectedCategory?.name}</span>
+            </DialogDescription>
+          </DialogHeader>
+          <form className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="sub-name">Subcategory Name</Label>
+              <Input
+                id="sub-name"
+                value={subcategoryFormData.name}
+                onChange={(e) => setSubcategoryFormData({ ...subcategoryFormData, name: e.target.value })}
+                placeholder="Enter subcategory name"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="sub-products">Number of Products</Label>
+              <Input
+                id="sub-products"
+                type="number"
+                value={subcategoryFormData.products}
+                onChange={(e) => setSubcategoryFormData({ ...subcategoryFormData, products: Number(e.target.value) })}
+                placeholder="Enter number of products"
+              />
+            </div>
+          </form>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddSubcategoryOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveSubcategory}>Add Subcategory</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
