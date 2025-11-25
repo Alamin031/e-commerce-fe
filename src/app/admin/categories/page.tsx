@@ -242,7 +242,7 @@ export default function AdminCategoriesPage() {
                         <Edit className="mr-2 h-4 w-4" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleAddSubcategoryClick(category)}>
                         <Plus className="mr-2 h-4 w-4" />
                         Add Subcategory
                       </DropdownMenuItem>
