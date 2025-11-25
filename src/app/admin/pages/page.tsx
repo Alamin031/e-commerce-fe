@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useState } from "react"
 import Link from "next/link"
@@ -9,16 +9,28 @@ import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
 import { Badge } from "../../components/ui/badge"
 import { Textarea } from "../../components/ui/textarea"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../../components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../../components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../components/ui/dropdown-menu"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "../../components/ui/alert-dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select"
 
-const pages = [
+interface Page {
+  id: string
+  title: string
+  slug: string
+  status: string
+  lastUpdated: string
+  content?: string
+}
+
+const initialPages: Page[] = [
   {
     id: "1",
     title: "About Us",
     slug: "about",
     status: "Published",
     lastUpdated: "Nov 15, 2024",
+    content: "Learn about our company and mission.",
   },
   {
     id: "2",
@@ -26,6 +38,7 @@ const pages = [
     slug: "privacy-policy",
     status: "Published",
     lastUpdated: "Nov 10, 2024",
+    content: "Our privacy policy outlines how we handle customer data.",
   },
   {
     id: "3",
@@ -33,6 +46,7 @@ const pages = [
     slug: "terms",
     status: "Published",
     lastUpdated: "Nov 10, 2024",
+    content: "Please read our terms and conditions carefully.",
   },
   {
     id: "4",
@@ -40,6 +54,7 @@ const pages = [
     slug: "return-policy",
     status: "Published",
     lastUpdated: "Nov 05, 2024",
+    content: "Information about returns and refunds.",
   },
   {
     id: "5",
@@ -47,11 +62,71 @@ const pages = [
     slug: "faq",
     status: "Draft",
     lastUpdated: "Nov 01, 2024",
+    content: "Frequently asked questions.",
   },
 ]
 
 export default function AdminPagesPage() {
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [pages, setPages] = useState<Page[]>(initialPages)
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [selectedPage, setSelectedPage] = useState<Page | null>(null)
+  const [editFormData, setEditFormData] = useState<Page | null>(null)
+  const [createFormData, setCreateFormData] = useState({
+    title: "",
+    slug: "",
+    content: "",
+    status: "Draft",
+  })
+
+  const handleEditClick = (page: Page) => {
+    setSelectedPage(page)
+    setEditFormData({ ...page })
+    setEditOpen(true)
+  }
+
+  const handleDeleteClick = (page: Page) => {
+    setSelectedPage(page)
+    setDeleteOpen(true)
+  }
+
+  const handleSaveEdit = () => {
+    if (editFormData) {
+      setPages(pages.map((p) => (p.id === editFormData.id ? editFormData : p)))
+      setEditOpen(false)
+      setEditFormData(null)
+    }
+  }
+
+  const handleConfirmDelete = () => {
+    if (selectedPage) {
+      setPages(pages.filter((p) => p.id !== selectedPage.id))
+      setDeleteOpen(false)
+      setSelectedPage(null)
+    }
+  }
+
+  const handleCreatePage = () => {
+    if (createFormData.title.trim() && createFormData.slug.trim()) {
+      const newPage: Page = {
+        id: String(Date.now()),
+        title: createFormData.title,
+        slug: createFormData.slug,
+        content: createFormData.content,
+        status: createFormData.status,
+        lastUpdated: new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
+      }
+      setPages([newPage, ...pages])
+      setIsCreateDialogOpen(false)
+      setCreateFormData({
+        title: "",
+        slug: "",
+        content: "",
+        status: "Draft",
+      })
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -60,7 +135,7 @@ export default function AdminPagesPage() {
           <h1 className="text-2xl font-bold tracking-tight">Pages</h1>
           <p className="text-muted-foreground">Manage static content pages.</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
@@ -74,22 +149,50 @@ export default function AdminPagesPage() {
             <form className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label htmlFor="pageTitle">Page Title</Label>
-                <Input id="pageTitle" placeholder="Enter page title" />
+                <Input
+                  id="pageTitle"
+                  value={createFormData.title}
+                  onChange={(e) => setCreateFormData({ ...createFormData, title: e.target.value })}
+                  placeholder="Enter page title"
+                />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="pageSlug">URL Slug</Label>
-                <Input id="pageSlug" placeholder="page-url-slug" />
+                <Input
+                  id="pageSlug"
+                  value={createFormData.slug}
+                  onChange={(e) => setCreateFormData({ ...createFormData, slug: e.target.value })}
+                  placeholder="page-url-slug"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="pageStatus">Status</Label>
+                <Select value={createFormData.status} onValueChange={(value) => setCreateFormData({ ...createFormData, status: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Draft">Draft</SelectItem>
+                    <SelectItem value="Published">Published</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="pageContent">Content</Label>
-                <Textarea id="pageContent" placeholder="Enter page content..." rows={10} />
+                <Textarea
+                  id="pageContent"
+                  value={createFormData.content}
+                  onChange={(e) => setCreateFormData({ ...createFormData, content: e.target.value })}
+                  placeholder="Enter page content..."
+                  rows={10}
+                />
               </div>
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Save as Draft
+                <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                  Cancel
                 </Button>
-                <Button type="submit" onClick={() => setIsDialogOpen(false)}>
-                  Publish
+                <Button type="button" onClick={handleCreatePage}>
+                  Create Page
                 </Button>
               </div>
             </form>
@@ -145,11 +248,11 @@ export default function AdminPagesPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleEditClick(page)}>
                         <Edit className="mr-2 h-4 w-4" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">
+                      <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(page)}>
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete
                       </DropdownMenuItem>
@@ -161,6 +264,84 @@ export default function AdminPagesPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Page Modal */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Page</DialogTitle>
+            <DialogDescription>Update page content and settings</DialogDescription>
+          </DialogHeader>
+          {editFormData && (
+            <form className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-title">Page Title</Label>
+                <Input
+                  id="edit-title"
+                  value={editFormData.title}
+                  onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
+                  placeholder="Enter page title"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-slug">URL Slug</Label>
+                <Input
+                  id="edit-slug"
+                  value={editFormData.slug}
+                  onChange={(e) => setEditFormData({ ...editFormData, slug: e.target.value })}
+                  placeholder="page-url-slug"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-status">Status</Label>
+                <Select value={editFormData.status} onValueChange={(value) => setEditFormData({ ...editFormData, status: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Draft">Draft</SelectItem>
+                    <SelectItem value="Published">Published</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-content">Content</Label>
+                <Textarea
+                  id="edit-content"
+                  value={editFormData.content || ""}
+                  onChange={(e) => setEditFormData({ ...editFormData, content: e.target.value })}
+                  placeholder="Enter page content..."
+                  rows={10}
+                />
+              </div>
+            </form>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEdit}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Page Modal */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Page</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <span className="font-semibold">{selectedPage?.title}</span>? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
