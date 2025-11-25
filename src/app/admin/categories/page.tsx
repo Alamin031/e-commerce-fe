@@ -115,6 +115,32 @@ export default function AdminCategoriesPage() {
     }
   }
 
+  const handleAddSubcategoryClick = (category: Category) => {
+    setSelectedCategory(category)
+    setSubcategoryFormData({ name: "", products: 0 })
+    setAddSubcategoryOpen(true)
+  }
+
+  const handleSaveSubcategory = () => {
+    if (selectedCategory && subcategoryFormData.name.trim()) {
+      const newSubcategory: Subcategory = {
+        id: `${selectedCategory.id}-${Date.now()}`,
+        name: subcategoryFormData.name,
+        products: subcategoryFormData.products,
+      }
+
+      setCategories(
+        categories.map((c) =>
+          c.id === selectedCategory.id
+            ? { ...c, subcategories: [...c.subcategories, newSubcategory] }
+            : c
+        )
+      )
+      setAddSubcategoryOpen(false)
+      setSubcategoryFormData({ name: "", products: 0 })
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
