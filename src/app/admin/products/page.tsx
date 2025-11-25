@@ -1,3 +1,6 @@
+'use client'
+
+import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Plus, Search, Filter, MoreVertical, Edit, Trash2, Eye, Copy } from "lucide-react"
@@ -8,9 +11,25 @@ import { Badge } from "../../components/ui/badge"
 import { Checkbox } from "../../components/ui/checkbox"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../../components/ui/dialog"
+import { Label } from "../../components/ui/label"
+import { Textarea } from "../../components/ui/textarea"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "../../components/ui/alert-dialog"
 import { formatPrice } from "../../lib/utils/format"
 
-const products = [
+interface Product {
+  id: string
+  name: string
+  image: string
+  sku: string
+  category: string
+  price: number
+  stock: number
+  status: string
+  description?: string
+}
+
+const initialProducts: Product[] = [
   {
     id: "1",
     name: "iPhone 15 Pro Max",
@@ -20,6 +39,7 @@ const products = [
     price: 129999,
     stock: 45,
     status: "Active",
+    description: "Latest iPhone with advanced features and powerful performance.",
   },
   {
     id: "2",
@@ -30,6 +50,7 @@ const products = [
     price: 79999,
     stock: 23,
     status: "Active",
+    description: "Lightweight laptop with M3 chip for seamless performance.",
   },
   {
     id: "3",
@@ -40,6 +61,7 @@ const products = [
     price: 89999,
     stock: 0,
     status: "Out of Stock",
+    description: "Premium smartphone with cutting-edge technology.",
   },
   {
     id: "4",
@@ -50,6 +72,7 @@ const products = [
     price: 29999,
     stock: 67,
     status: "Active",
+    description: "High-quality wireless headphones with noise cancellation.",
   },
   {
     id: "5",
@@ -60,10 +83,50 @@ const products = [
     price: 99999,
     stock: 12,
     status: "Low Stock",
+    description: "Powerful tablet for professionals and creators.",
   },
 ]
 
 export default function AdminProductsPage() {
+  const [products, setProducts] = useState<Product[]>(initialProducts)
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [viewOpen, setViewOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [editFormData, setEditFormData] = useState<Product | null>(null)
+
+  const handleViewClick = (product: Product) => {
+    setSelectedProduct(product)
+    setViewOpen(true)
+  }
+
+  const handleEditClick = (product: Product) => {
+    setSelectedProduct(product)
+    setEditFormData({ ...product })
+    setEditOpen(true)
+  }
+
+  const handleDeleteClick = (product: Product) => {
+    setSelectedProduct(product)
+    setDeleteOpen(true)
+  }
+
+  const handleSaveEdit = () => {
+    if (editFormData) {
+      setProducts(products.map((p) => (p.id === editFormData.id ? editFormData : p)))
+      setEditOpen(false)
+      setEditFormData(null)
+    }
+  }
+
+  const handleConfirmDelete = () => {
+    if (selectedProduct) {
+      setProducts(products.filter((p) => p.id !== selectedProduct.id))
+      setDeleteOpen(false)
+      setSelectedProduct(null)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -179,11 +242,11 @@ export default function AdminProductsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleViewClick(product)}>
                             <Eye className="mr-2 h-4 w-4" />
                             View
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditClick(product)}>
                             <Edit className="mr-2 h-4 w-4" />
                             Edit
                           </DropdownMenuItem>
@@ -191,7 +254,7 @@ export default function AdminProductsPage() {
                             <Copy className="mr-2 h-4 w-4" />
                             Duplicate
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
+                          <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(product)}>
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete
                           </DropdownMenuItem>
@@ -217,6 +280,193 @@ export default function AdminProductsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* View Modal */}
+      <Dialog open={viewOpen} onOpenChange={setViewOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>View Product</DialogTitle>
+            <DialogDescription>Product details and information</DialogDescription>
+          </DialogHeader>
+          {selectedProduct && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div className="rounded-lg bg-muted p-4">
+                  <Image
+                    src={selectedProduct.image || "/placeholder.svg"}
+                    alt={selectedProduct.name}
+                    width={200}
+                    height={200}
+                    className="h-48 w-full object-cover rounded"
+                  />
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">Product Name</Label>
+                    <p className="mt-1 font-medium text-base">{selectedProduct.name}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">SKU</Label>
+                    <p className="mt-1 font-medium text-base">{selectedProduct.sku}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">Category</Label>
+                    <p className="mt-1 font-medium text-base">{selectedProduct.category}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">Price</Label>
+                    <p className="mt-1 font-medium text-base">{formatPrice(selectedProduct.price)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">Stock</Label>
+                    <p className="mt-1 font-medium text-base">{selectedProduct.stock}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">Status</Label>
+                    <div className="mt-1">
+                      <Badge
+                        variant="secondary"
+                        className={
+                          selectedProduct.status === "Active"
+                            ? "bg-green-500/10 text-green-600"
+                            : selectedProduct.status === "Low Stock"
+                              ? "bg-yellow-500/10 text-yellow-600"
+                              : "bg-red-500/10 text-red-600"
+                        }
+                      >
+                        {selectedProduct.status}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {selectedProduct.description && (
+                <div>
+                  <Label className="text-muted-foreground text-xs uppercase">Description</Label>
+                  <p className="mt-2 text-sm">{selectedProduct.description}</p>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Modal */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Product</DialogTitle>
+            <DialogDescription>Update product information</DialogDescription>
+          </DialogHeader>
+          {editFormData && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Product Name</Label>
+                <Input
+                  id="edit-name"
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  placeholder="Enter product name"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-sku">SKU</Label>
+                  <Input
+                    id="edit-sku"
+                    value={editFormData.sku}
+                    onChange={(e) => setEditFormData({ ...editFormData, sku: e.target.value })}
+                    placeholder="Enter SKU"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-category">Category</Label>
+                  <Input
+                    id="edit-category"
+                    value={editFormData.category}
+                    onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })}
+                    placeholder="Enter category"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-price">Price</Label>
+                  <Input
+                    id="edit-price"
+                    type="number"
+                    value={editFormData.price}
+                    onChange={(e) => setEditFormData({ ...editFormData, price: Number(e.target.value) })}
+                    placeholder="Enter price"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-stock">Stock</Label>
+                  <Input
+                    id="edit-stock"
+                    type="number"
+                    value={editFormData.stock}
+                    onChange={(e) => setEditFormData({ ...editFormData, stock: Number(e.target.value) })}
+                    placeholder="Enter stock quantity"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-status">Status</Label>
+                <Select value={editFormData.status} onValueChange={(value) => setEditFormData({ ...editFormData, status: value })}>
+                  <SelectTrigger id="edit-status">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Low Stock">Low Stock</SelectItem>
+                    <SelectItem value="Out of Stock">Out of Stock</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-description">Description</Label>
+                <Textarea
+                  id="edit-description"
+                  value={editFormData.description || ""}
+                  onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                  placeholder="Enter product description"
+                  rows={4}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEdit}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Modal */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Product</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <span className="font-semibold">{selectedProduct?.name}</span>? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

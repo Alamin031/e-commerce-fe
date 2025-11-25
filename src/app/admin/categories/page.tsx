@@ -2,17 +2,33 @@
 
 import { useState } from "react"
 import Image from "next/image"
-import { Plus, Search, Edit, Trash2, MoreVertical } from "lucide-react"
+import { Plus, Search, Edit, Trash2, MoreVertical, Eye } from "lucide-react"
 import { Card, CardContent } from "../../components/ui/card"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
 import { Badge } from "../../components/ui/badge"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../../components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../../components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "../../components/ui/alert-dialog"
 
-const categories = [
+interface Subcategory {
+  id: string
+  name: string
+  products: number
+}
+
+interface Category {
+  id: string
+  name: string
+  slug: string
+  image: string
+  products: number
+  subcategories: Subcategory[]
+}
+
+const initialCategories: Category[] = [
   {
     id: "1",
     name: "Smartphones",
@@ -57,7 +73,73 @@ const categories = [
 ]
 
 export default function AdminCategoriesPage() {
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [categories, setCategories] = useState<Category[]>(initialCategories)
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [viewOpen, setViewOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [addSubcategoryOpen, setAddSubcategoryOpen] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
+  const [editFormData, setEditFormData] = useState<Category | null>(null)
+  const [subcategoryFormData, setSubcategoryFormData] = useState({ name: "", products: 0 })
+
+  const handleViewClick = (category: Category) => {
+    setSelectedCategory(category)
+    setViewOpen(true)
+  }
+
+  const handleEditClick = (category: Category) => {
+    setSelectedCategory(category)
+    setEditFormData({ ...category })
+    setEditOpen(true)
+  }
+
+  const handleDeleteClick = (category: Category) => {
+    setSelectedCategory(category)
+    setDeleteOpen(true)
+  }
+
+  const handleSaveEdit = () => {
+    if (editFormData) {
+      setCategories(categories.map((c) => (c.id === editFormData.id ? editFormData : c)))
+      setEditOpen(false)
+      setEditFormData(null)
+    }
+  }
+
+  const handleConfirmDelete = () => {
+    if (selectedCategory) {
+      setCategories(categories.filter((c) => c.id !== selectedCategory.id))
+      setDeleteOpen(false)
+      setSelectedCategory(null)
+    }
+  }
+
+  const handleAddSubcategoryClick = (category: Category) => {
+    setSelectedCategory(category)
+    setSubcategoryFormData({ name: "", products: 0 })
+    setAddSubcategoryOpen(true)
+  }
+
+  const handleSaveSubcategory = () => {
+    if (selectedCategory && subcategoryFormData.name.trim()) {
+      const newSubcategory: Subcategory = {
+        id: `${selectedCategory.id}-${Date.now()}`,
+        name: subcategoryFormData.name,
+        products: subcategoryFormData.products,
+      }
+
+      setCategories(
+        categories.map((c) =>
+          c.id === selectedCategory.id
+            ? { ...c, subcategories: [...c.subcategories, newSubcategory] }
+            : c
+        )
+      )
+      setAddSubcategoryOpen(false)
+      setSubcategoryFormData({ name: "", products: 0 })
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -66,7 +148,7 @@ export default function AdminCategoriesPage() {
           <h1 className="text-2xl font-bold tracking-tight">Categories</h1>
           <p className="text-muted-foreground">Manage product categories and subcategories.</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
@@ -108,7 +190,7 @@ export default function AdminCategoriesPage() {
                   <span className="text-sm text-muted-foreground">Click to upload image</span>
                 </div>
               </div>
-              <Button type="submit" onClick={() => setIsDialogOpen(false)}>
+              <Button type="submit" onClick={() => setIsAddDialogOpen(false)}>
                 Create Category
               </Button>
             </form>
@@ -152,15 +234,19 @@ export default function AdminCategoriesPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleViewClick(category)}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        View
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleEditClick(category)}>
                         <Edit className="mr-2 h-4 w-4" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleAddSubcategoryClick(category)}>
                         <Plus className="mr-2 h-4 w-4" />
                         Add Subcategory
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">
+                      <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(category)}>
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete
                       </DropdownMenuItem>
@@ -185,6 +271,178 @@ export default function AdminCategoriesPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* View Modal */}
+      <Dialog open={viewOpen} onOpenChange={setViewOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>View Category</DialogTitle>
+            <DialogDescription>Category details and information</DialogDescription>
+          </DialogHeader>
+          {selectedCategory && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div className="rounded-lg bg-muted p-4">
+                  <Image
+                    src={selectedCategory.image || "/placeholder.svg"}
+                    alt={selectedCategory.name}
+                    width={200}
+                    height={200}
+                    className="h-48 w-full object-cover rounded"
+                  />
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">Category Name</Label>
+                    <p className="mt-1 font-medium text-base">{selectedCategory.name}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">URL Slug</Label>
+                    <p className="mt-1 font-medium text-base">{selectedCategory.slug}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">Total Products</Label>
+                    <p className="mt-1 font-medium text-base">{selectedCategory.products}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">Subcategories</Label>
+                    <p className="mt-1 font-medium text-base">{selectedCategory.subcategories.length}</p>
+                  </div>
+                </div>
+              </div>
+              {selectedCategory.subcategories.length > 0 && (
+                <div>
+                  <Label className="text-muted-foreground text-xs uppercase">Subcategories List</Label>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {selectedCategory.subcategories.map((sub) => (
+                      <Badge key={sub.id} variant="outline" className="gap-1">
+                        {sub.name}
+                        <span className="text-muted-foreground">({sub.products})</span>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Modal */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Category</DialogTitle>
+            <DialogDescription>Update category information</DialogDescription>
+          </DialogHeader>
+          {editFormData && (
+            <form className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-name">Category Name</Label>
+                <Input
+                  id="edit-name"
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  placeholder="Enter category name"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-slug">URL Slug</Label>
+                <Input
+                  id="edit-slug"
+                  value={editFormData.slug}
+                  onChange={(e) => setEditFormData({ ...editFormData, slug: e.target.value })}
+                  placeholder="category-slug"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-products">Total Products</Label>
+                <Input
+                  id="edit-products"
+                  type="number"
+                  value={editFormData.products}
+                  onChange={(e) => setEditFormData({ ...editFormData, products: Number(e.target.value) })}
+                  placeholder="Enter number of products"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Category Image</Label>
+                <div className="flex h-32 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50 hover:bg-muted">
+                  <span className="text-sm text-muted-foreground">Click to upload image</span>
+                </div>
+              </div>
+            </form>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEdit}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Modal */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Category</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <span className="font-semibold">{selectedCategory?.name}</span>? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Add Subcategory Modal */}
+      <Dialog open={addSubcategoryOpen} onOpenChange={setAddSubcategoryOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add Subcategory</DialogTitle>
+            <DialogDescription>
+              Add a new subcategory to <span className="font-semibold">{selectedCategory?.name}</span>
+            </DialogDescription>
+          </DialogHeader>
+          <form className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="sub-name">Subcategory Name</Label>
+              <Input
+                id="sub-name"
+                value={subcategoryFormData.name}
+                onChange={(e) => setSubcategoryFormData({ ...subcategoryFormData, name: e.target.value })}
+                placeholder="Enter subcategory name"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="sub-products">Number of Products</Label>
+              <Input
+                id="sub-products"
+                type="number"
+                value={subcategoryFormData.products}
+                onChange={(e) => setSubcategoryFormData({ ...subcategoryFormData, products: Number(e.target.value) })}
+                placeholder="Enter number of products"
+              />
+            </div>
+          </form>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddSubcategoryOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveSubcategory}>Add Subcategory</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

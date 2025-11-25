@@ -1,5 +1,8 @@
+'use client'
+
+import { useState } from "react"
 import Link from "next/link"
-import { Search, Filter, Eye, MoreVertical, Download, Printer } from "lucide-react"
+import { Search, Filter, Eye, MoreVertical, Download, Printer, Plus, Mail, X } from "lucide-react"
 import { Card, CardContent } from "../../components/ui/card"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
@@ -8,9 +11,34 @@ import { Checkbox } from "../../components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../../components/ui/dialog"
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "../../components/ui/sheet"
+import { Label } from "../../components/ui/label"
+import { Textarea } from "../../components/ui/textarea"
 import { formatPrice } from "../../lib/utils/format"
 
-const orders = [
+interface OrderItem {
+  id: string
+  name: string
+  quantity: number
+  price: number
+}
+
+interface Order {
+  id: string
+  customer: string
+  email: string
+  items: number
+  total: number
+  status: string
+  payment: string
+  date: string
+  address?: string
+  phone?: string
+  orderItems?: OrderItem[]
+}
+
+const initialOrders: Order[] = [
   {
     id: "ORD-2024-001",
     customer: "John Doe",
@@ -20,6 +48,12 @@ const orders = [
     status: "Processing",
     payment: "Paid",
     date: "Nov 20, 2024",
+    address: "123 Main Street, Dhaka, Bangladesh",
+    phone: "+880 1234567890",
+    orderItems: [
+      { id: "1", name: "iPhone 15 Pro Max", quantity: 1, price: 129999 },
+      { id: "2", name: "Sony WH-1000XM5", quantity: 1, price: 29999 },
+    ],
   },
   {
     id: "ORD-2024-002",
@@ -30,6 +64,11 @@ const orders = [
     status: "Shipped",
     payment: "Paid",
     date: "Nov 19, 2024",
+    address: "456 Oak Avenue, Chittagong, Bangladesh",
+    phone: "+880 9876543210",
+    orderItems: [
+      { id: "3", name: "iPad Pro 12.9", quantity: 1, price: 49999 },
+    ],
   },
   {
     id: "ORD-2024-003",
@@ -40,6 +79,11 @@ const orders = [
     status: "Delivered",
     payment: "Paid",
     date: "Nov 18, 2024",
+    address: "789 Pine Road, Sylhet, Bangladesh",
+    phone: "+880 5555555555",
+    orderItems: [
+      { id: "4", name: "Samsung Galaxy S24 Ultra", quantity: 1, price: 89999 },
+    ],
   },
   {
     id: "ORD-2024-004",
@@ -50,6 +94,11 @@ const orders = [
     status: "Pending",
     payment: "Pending",
     date: "Nov 17, 2024",
+    address: "321 Elm Street, Rajshahi, Bangladesh",
+    phone: "+880 3333333333",
+    orderItems: [
+      { id: "5", name: "Wireless Earbuds", quantity: 1, price: 15999 },
+    ],
   },
   {
     id: "ORD-2024-005",
@@ -60,6 +109,12 @@ const orders = [
     status: "Cancelled",
     payment: "Refunded",
     date: "Nov 16, 2024",
+    address: "654 Birch Lane, Khulna, Bangladesh",
+    phone: "+880 7777777777",
+    orderItems: [
+      { id: "6", name: "MacBook Air M3", quantity: 1, price: 79999 },
+      { id: "7", name: "Magic Mouse", quantity: 1, price: 10000 },
+    ],
   },
 ]
 
@@ -94,6 +149,190 @@ function getPaymentColor(payment: string) {
 }
 
 export default function AdminOrdersPage() {
+  const [orders, setOrders] = useState<Order[]>(initialOrders)
+  const [viewOpen, setViewOpen] = useState(false)
+  const [addDrawerOpen, setAddDrawerOpen] = useState(false)
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [newOrderForm, setNewOrderForm] = useState({
+    customer: "",
+    email: "",
+    phone: "",
+    address: "",
+    items: [{ name: "", quantity: 1, price: 0 }],
+    status: "Pending",
+    payment: "Pending",
+  })
+
+  const handleViewClick = (order: Order) => {
+    setSelectedOrder(order)
+    setViewOpen(true)
+  }
+
+  const handlePrintInvoice = (order: Order) => {
+    const printWindow = window.open("", "", "height=600,width=800")
+    if (printWindow) {
+      const invoiceHTML = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Invoice - ${order.id}</title>
+            <style>
+              * { margin: 0; padding: 0; box-sizing: border-box; }
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background: white; }
+              .invoice-container { max-width: 800px; margin: 0 auto; padding: 40px; }
+              .header { text-align: center; margin-bottom: 40px; }
+              .header h1 { font-size: 32px; font-weight: bold; margin-bottom: 5px; }
+              .header p { color: #666; font-size: 14px; }
+              .invoice-details { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+              .invoice-section h3 { font-weight: bold; margin-bottom: 10px; font-size: 14px; }
+              .invoice-section p { font-size: 13px; color: #666; line-height: 1.8; }
+              .invoice-section .label { font-weight: bold; }
+              table { width: 100%; border-collapse: collapse; margin: 30px 0; }
+              table thead { background-color: #f5f5f5; }
+              table th { padding: 12px; text-align: left; font-weight: bold; border-bottom: 2px solid #ddd; }
+              table td { padding: 12px; border-bottom: 1px solid #eee; }
+              table tr:last-child td { border-bottom: 2px solid #ddd; }
+              .total-section { display: flex; justify-content: flex-end; margin-top: 30px; margin-bottom: 30px; }
+              .total-box { width: 300px; padding: 20px; border-top: 2px solid #333; }
+              .total-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
+              .total-row.final { font-size: 18px; font-weight: bold; border-top: 1px solid #ddd; padding-top: 10px; }
+              .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 12px; }
+              @media print { body { margin: 0; padding: 0; } .invoice-container { padding: 20px; } }
+            </style>
+          </head>
+          <body>
+            <div class="invoice-container">
+              <div class="header">
+                <h1>INVOICE</h1>
+                <p>${order.id}</p>
+              </div>
+
+              <div class="invoice-details">
+                <div class="invoice-section">
+                  <h3>From:</h3>
+                  <p><span class="label">Your Store Name</span><br>123 Business Street<br>Dhaka, Bangladesh</p>
+                </div>
+                <div class="invoice-section">
+                  <h3>Bill To:</h3>
+                  <p>
+                    <span class="label">${order.customer}</span><br>
+                    ${order.email}<br>
+                    ${order.phone}<br>
+                    ${order.address}
+                  </p>
+                </div>
+              </div>
+
+              <table>
+                <thead>
+                  <tr>
+                    <th>Product Name</th>
+                    <th style="text-align: right; width: 80px;">Qty</th>
+                    <th style="text-align: right; width: 100px;">Price</th>
+                    <th style="text-align: right; width: 120px;">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${order.orderItems?.map((item) => `
+                    <tr>
+                      <td>${item.name}</td>
+                      <td style="text-align: right;">${item.quantity}</td>
+                      <td style="text-align: right;">৳ ${item.price.toLocaleString("en-BD")}</td>
+                      <td style="text-align: right;">৳ ${(item.price * item.quantity).toLocaleString("en-BD")}</td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+
+              <div class="total-section">
+                <div class="total-box">
+                  <div class="total-row">
+                    <span>Subtotal:</span>
+                    <span>৳ ${order.total.toLocaleString("en-BD")}</span>
+                  </div>
+                  <div class="total-row final">
+                    <span>Total:</span>
+                    <span>৳ ${order.total.toLocaleString("en-BD")}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style="margin: 30px 0; padding: 20px; background-color: #f9f9f9; border-radius: 5px;">
+                <p><strong>Status:</strong> ${order.status}</p>
+                <p><strong>Payment Status:</strong> ${order.payment}</p>
+              </div>
+
+              <div class="footer">
+                <p>Thank you for your business!</p>
+                <p>Invoice generated on ${new Date().toLocaleDateString("en-BD", { year: "numeric", month: "long", day: "numeric" })}</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `
+      printWindow.document.write(invoiceHTML)
+      printWindow.document.close()
+      printWindow.print()
+    }
+  }
+
+  const handleSendInvoiceEmail = (order: Order) => {
+    alert(`Invoice email sent to ${order.email}`)
+  }
+
+  const handleAddOrder = () => {
+    const totalAmount = newOrderForm.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+    const newOrder: Order = {
+      id: `ORD-2024-${String(orders.length + 1).padStart(3, "0")}`,
+      customer: newOrderForm.customer,
+      email: newOrderForm.email,
+      items: newOrderForm.items.length,
+      total: totalAmount,
+      status: newOrderForm.status,
+      payment: newOrderForm.payment,
+      date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
+      address: newOrderForm.address,
+      phone: newOrderForm.phone,
+      orderItems: newOrderForm.items.map((item, idx) => ({
+        id: String(idx),
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+    }
+    setOrders([newOrder, ...orders])
+    setAddDrawerOpen(false)
+    setNewOrderForm({
+      customer: "",
+      email: "",
+      phone: "",
+      address: "",
+      items: [{ name: "", quantity: 1, price: 0 }],
+      status: "Pending",
+      payment: "Pending",
+    })
+  }
+
+  const addOrderItem = () => {
+    setNewOrderForm({
+      ...newOrderForm,
+      items: [...newOrderForm.items, { name: "", quantity: 1, price: 0 }],
+    })
+  }
+
+  const removeOrderItem = (index: number) => {
+    setNewOrderForm({
+      ...newOrderForm,
+      items: newOrderForm.items.filter((_, i) => i !== index),
+    })
+  }
+
+  const updateOrderItem = (index: number, field: string, value: any) => {
+    const updatedItems = [...newOrderForm.items]
+    updatedItems[index] = { ...updatedItems[index], [field]: value }
+    setNewOrderForm({ ...newOrderForm, items: updatedItems })
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -102,6 +341,10 @@ export default function AdminOrdersPage() {
           <p className="text-muted-foreground">Manage and process customer orders.</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" className="gap-2 bg-transparent" onClick={() => setAddDrawerOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Add Order
+          </Button>
           <Button variant="outline" className="gap-2 bg-transparent">
             <Download className="h-4 w-4" />
             Export
@@ -200,13 +443,17 @@ export default function AdminOrdersPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleViewClick(order)}>
                                 <Eye className="mr-2 h-4 w-4" />
                                 View Details
                               </DropdownMenuItem>
-                              <DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handlePrintInvoice(order)}>
                                 <Printer className="mr-2 h-4 w-4" />
                                 Print Invoice
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleSendInvoiceEmail(order)}>
+                                <Mail className="mr-2 h-4 w-4" />
+                                Send Invoice
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -232,6 +479,271 @@ export default function AdminOrdersPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* View Details Modal */}
+      <Dialog open={viewOpen} onOpenChange={setViewOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Order Details</DialogTitle>
+            <DialogDescription>Complete order information and items</DialogDescription>
+          </DialogHeader>
+          {selectedOrder && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground text-xs uppercase">Order ID</Label>
+                  <p className="mt-1 font-medium">{selectedOrder.id}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs uppercase">Order Date</Label>
+                  <p className="mt-1 font-medium">{selectedOrder.date}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4 rounded-lg border border-border p-4">
+                <h3 className="font-semibold">Customer Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">Name</Label>
+                    <p className="mt-1 font-medium">{selectedOrder.customer}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">Email</Label>
+                    <p className="mt-1 font-medium text-sm">{selectedOrder.email}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">Phone</Label>
+                    <p className="mt-1 font-medium">{selectedOrder.phone}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">Address</Label>
+                    <p className="mt-1 font-medium text-sm">{selectedOrder.address}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4 rounded-lg border border-border p-4">
+                <h3 className="font-semibold">Order Items</h3>
+                <div className="space-y-3">
+                  {selectedOrder.orderItems?.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between border-b pb-3 last:border-b-0">
+                      <div>
+                        <p className="font-medium">{item.name}</p>
+                        <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                      </div>
+                      <p className="font-medium">{formatPrice(item.price * item.quantity)}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-4 rounded-lg border border-border p-4">
+                <h3 className="font-semibold">Order Status</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">Status</Label>
+                    <div className="mt-1">
+                      <Badge variant="secondary" className={getStatusColor(selectedOrder.status)}>
+                        {selectedOrder.status}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs uppercase">Payment</Label>
+                    <div className="mt-1">
+                      <Badge variant="secondary" className={getPaymentColor(selectedOrder.payment)}>
+                        {selectedOrder.payment}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-lg bg-muted p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-semibold">Total Amount:</span>
+                  <span className="text-lg font-bold">{formatPrice(selectedOrder.total)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Manual Order Drawer */}
+      <Sheet open={addDrawerOpen} onOpenChange={setAddDrawerOpen}>
+        <SheetContent side="right" className="w-full sm:w-[600px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Add Manual Order</SheetTitle>
+            <SheetDescription>Create a new order manually</SheetDescription>
+          </SheetHeader>
+
+          <div className="space-y-6 py-4">
+            <div className="space-y-4">
+              <h3 className="font-semibold">Customer Information</h3>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="order-customer">Customer Name</Label>
+                  <Input
+                    id="order-customer"
+                    value={newOrderForm.customer}
+                    onChange={(e) => setNewOrderForm({ ...newOrderForm, customer: e.target.value })}
+                    placeholder="Enter customer name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="order-email">Email</Label>
+                  <Input
+                    id="order-email"
+                    type="email"
+                    value={newOrderForm.email}
+                    onChange={(e) => setNewOrderForm({ ...newOrderForm, email: e.target.value })}
+                    placeholder="Enter customer email"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="order-phone">Phone</Label>
+                  <Input
+                    id="order-phone"
+                    value={newOrderForm.phone}
+                    onChange={(e) => setNewOrderForm({ ...newOrderForm, phone: e.target.value })}
+                    placeholder="Enter customer phone"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="order-address">Address</Label>
+                  <Textarea
+                    id="order-address"
+                    value={newOrderForm.address}
+                    onChange={(e) => setNewOrderForm({ ...newOrderForm, address: e.target.value })}
+                    placeholder="Enter delivery address"
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold">Order Items</h3>
+                <Button size="sm" variant="outline" onClick={addOrderItem} className="gap-1">
+                  <Plus className="h-4 w-4" />
+                  Add Item
+                </Button>
+              </div>
+              <div className="space-y-3">
+                {newOrderForm.items.map((item, index) => (
+                  <div key={index} className="space-y-2 rounded-lg border border-border p-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">Item {index + 1}</Label>
+                      {newOrderForm.items.length > 1 && (
+                        <button onClick={() => removeOrderItem(index)} className="text-destructive hover:text-destructive/80">
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="col-span-2 space-y-1">
+                        <Label htmlFor={`item-name-${index}`} className="text-xs">
+                          Product Name
+                        </Label>
+                        <Input
+                          id={`item-name-${index}`}
+                          value={item.name}
+                          onChange={(e) => updateOrderItem(index, "name", e.target.value)}
+                          placeholder="Product name"
+                          className="text-sm"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor={`item-qty-${index}`} className="text-xs">
+                          Qty
+                        </Label>
+                        <Input
+                          id={`item-qty-${index}`}
+                          type="number"
+                          value={item.quantity}
+                          onChange={(e) => updateOrderItem(index, "quantity", Number(e.target.value))}
+                          min="1"
+                          className="text-sm"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor={`item-price-${index}`} className="text-xs">
+                        Price
+                      </Label>
+                      <Input
+                        id={`item-price-${index}`}
+                        type="number"
+                        value={item.price}
+                        onChange={(e) => updateOrderItem(index, "price", Number(e.target.value))}
+                        placeholder="0"
+                        className="text-sm"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="font-semibold">Order Status</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="order-status">Status</Label>
+                  <Select value={newOrderForm.status} onValueChange={(value) => setNewOrderForm({ ...newOrderForm, status: value })}>
+                    <SelectTrigger id="order-status">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Processing">Processing</SelectItem>
+                      <SelectItem value="Shipped">Shipped</SelectItem>
+                      <SelectItem value="Delivered">Delivered</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="order-payment">Payment Status</Label>
+                  <Select value={newOrderForm.payment} onValueChange={(value) => setNewOrderForm({ ...newOrderForm, payment: value })}>
+                    <SelectTrigger id="order-payment">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Paid">Paid</SelectItem>
+                      <SelectItem value="Refunded">Refunded</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-lg bg-muted p-4">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold">Total Amount:</span>
+                <span className="text-lg font-bold">
+                  {formatPrice(newOrderForm.items.reduce((sum, item) => sum + item.price * item.quantity, 0))}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <SheetFooter>
+            <Button variant="outline" onClick={() => setAddDrawerOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddOrder}>Create Order</Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+
     </div>
   )
 }

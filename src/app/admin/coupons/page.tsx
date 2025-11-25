@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useState } from "react"
 import { Plus, Search, Edit, Trash2, MoreVertical, Copy, Tag } from "lucide-react"
@@ -7,12 +7,27 @@ import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
 import { Badge } from "../../components/ui/badge"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../../components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../../components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "../../components/ui/alert-dialog"
 import { formatPrice } from "../../lib/utils/format"
 
-const coupons = [
+interface Coupon {
+  id: string
+  code: string
+  type: string
+  value: number
+  minOrder: number
+  maxDiscount: number | null
+  usageLimit: number
+  used: number
+  validFrom: string
+  validTo: string
+  status: string
+}
+
+const initialCoupons: Coupon[] = [
   {
     id: "1",
     code: "WELCOME10",
@@ -68,7 +83,95 @@ const coupons = [
 ]
 
 export default function AdminCouponsPage() {
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [coupons, setCoupons] = useState<Coupon[]>(initialCoupons)
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [duplicateOpen, setDuplicateOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null)
+  const [editFormData, setEditFormData] = useState<Coupon | null>(null)
+  const [duplicateFormData, setDuplicateFormData] = useState<Coupon | null>(null)
+  const [createFormData, setCreateFormData] = useState({
+    code: "",
+    type: "Percentage",
+    value: 0,
+    minOrder: 0,
+    maxDiscount: "",
+    usageLimit: "",
+    validFrom: "",
+    validTo: "",
+  })
+
+  const handleEditClick = (coupon: Coupon) => {
+    setSelectedCoupon(coupon)
+    setEditFormData({ ...coupon })
+    setEditOpen(true)
+  }
+
+  const handleDuplicateClick = (coupon: Coupon) => {
+    setSelectedCoupon(coupon)
+    setDuplicateFormData({ ...coupon, id: String(Date.now()) })
+    setDuplicateOpen(true)
+  }
+
+  const handleDeleteClick = (coupon: Coupon) => {
+    setSelectedCoupon(coupon)
+    setDeleteOpen(true)
+  }
+
+  const handleSaveEdit = () => {
+    if (editFormData) {
+      setCoupons(coupons.map((c) => (c.id === editFormData.id ? editFormData : c)))
+      setEditOpen(false)
+      setEditFormData(null)
+    }
+  }
+
+  const handleConfirmDuplicate = () => {
+    if (duplicateFormData && duplicateFormData.code) {
+      setCoupons([...coupons, duplicateFormData])
+      setDuplicateOpen(false)
+      setDuplicateFormData(null)
+    }
+  }
+
+  const handleConfirmDelete = () => {
+    if (selectedCoupon) {
+      setCoupons(coupons.filter((c) => c.id !== selectedCoupon.id))
+      setDeleteOpen(false)
+      setSelectedCoupon(null)
+    }
+  }
+
+  const handleCreateCoupon = () => {
+    if (createFormData.code.trim()) {
+      const newCoupon: Coupon = {
+        id: String(Date.now()),
+        code: createFormData.code.toUpperCase(),
+        type: createFormData.type,
+        value: createFormData.value,
+        minOrder: createFormData.minOrder,
+        maxDiscount: createFormData.maxDiscount ? Number(createFormData.maxDiscount) : null,
+        usageLimit: createFormData.usageLimit ? Number(createFormData.usageLimit) : 1000,
+        used: 0,
+        validFrom: createFormData.validFrom,
+        validTo: createFormData.validTo,
+        status: "Active",
+      }
+      setCoupons([newCoupon, ...coupons])
+      setIsCreateDialogOpen(false)
+      setCreateFormData({
+        code: "",
+        type: "Percentage",
+        value: 0,
+        minOrder: 0,
+        maxDiscount: "",
+        usageLimit: "",
+        validFrom: "",
+        validTo: "",
+      })
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -77,7 +180,7 @@ export default function AdminCouponsPage() {
           <h1 className="text-2xl font-bold tracking-tight">Coupons</h1>
           <p className="text-muted-foreground">Manage discount coupons and promotions.</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
@@ -91,51 +194,91 @@ export default function AdminCouponsPage() {
             <form className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label htmlFor="couponCode">Coupon Code</Label>
-                <Input id="couponCode" placeholder="Enter coupon code" className="uppercase" />
+                <Input
+                  id="couponCode"
+                  value={createFormData.code}
+                  onChange={(e) => setCreateFormData({ ...createFormData, code: e.target.value })}
+                  placeholder="Enter coupon code"
+                  className="uppercase"
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="discountType">Discount Type</Label>
-                  <Select>
+                  <Select value={createFormData.type} onValueChange={(value) => setCreateFormData({ ...createFormData, type: value })}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="percentage">Percentage</SelectItem>
-                      <SelectItem value="fixed">Fixed Amount</SelectItem>
+                      <SelectItem value="Percentage">Percentage</SelectItem>
+                      <SelectItem value="Fixed">Fixed Amount</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="discountValue">Discount Value</Label>
-                  <Input id="discountValue" type="number" placeholder="0" />
+                  <Input
+                    id="discountValue"
+                    type="number"
+                    value={createFormData.value}
+                    onChange={(e) => setCreateFormData({ ...createFormData, value: Number(e.target.value) })}
+                    placeholder="0"
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="minOrder">Min. Order Value (₹)</Label>
-                  <Input id="minOrder" type="number" placeholder="0" />
+                  <Label htmlFor="minOrder">Min. Order Value</Label>
+                  <Input
+                    id="minOrder"
+                    type="number"
+                    value={createFormData.minOrder}
+                    onChange={(e) => setCreateFormData({ ...createFormData, minOrder: Number(e.target.value) })}
+                    placeholder="0"
+                  />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="maxDiscount">Max. Discount (₹)</Label>
-                  <Input id="maxDiscount" type="number" placeholder="No limit" />
+                  <Label htmlFor="maxDiscount">Max. Discount</Label>
+                  <Input
+                    id="maxDiscount"
+                    type="number"
+                    value={createFormData.maxDiscount}
+                    onChange={(e) => setCreateFormData({ ...createFormData, maxDiscount: e.target.value })}
+                    placeholder="No limit"
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="validFrom">Valid From</Label>
-                  <Input id="validFrom" type="date" />
+                  <Input
+                    id="validFrom"
+                    type="date"
+                    value={createFormData.validFrom}
+                    onChange={(e) => setCreateFormData({ ...createFormData, validFrom: e.target.value })}
+                  />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="validTo">Valid To</Label>
-                  <Input id="validTo" type="date" />
+                  <Input
+                    id="validTo"
+                    type="date"
+                    value={createFormData.validTo}
+                    onChange={(e) => setCreateFormData({ ...createFormData, validTo: e.target.value })}
+                  />
                 </div>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="usageLimit">Usage Limit</Label>
-                <Input id="usageLimit" type="number" placeholder="Unlimited" />
+                <Input
+                  id="usageLimit"
+                  type="number"
+                  value={createFormData.usageLimit}
+                  onChange={(e) => setCreateFormData({ ...createFormData, usageLimit: e.target.value })}
+                  placeholder="Unlimited"
+                />
               </div>
-              <Button type="submit" onClick={() => setIsDialogOpen(false)}>
+              <Button type="button" onClick={handleCreateCoupon}>
                 Create Coupon
               </Button>
             </form>
@@ -227,15 +370,15 @@ export default function AdminCouponsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditClick(coupon)}>
                             <Edit className="mr-2 h-4 w-4" />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDuplicateClick(coupon)}>
                             <Copy className="mr-2 h-4 w-4" />
                             Duplicate
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
+                          <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(coupon)}>
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete
                           </DropdownMenuItem>
@@ -249,6 +392,236 @@ export default function AdminCouponsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Coupon Modal */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Coupon</DialogTitle>
+            <DialogDescription>Update coupon details and settings</DialogDescription>
+          </DialogHeader>
+          {editFormData && (
+            <form className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-code">Coupon Code</Label>
+                <Input
+                  id="edit-code"
+                  value={editFormData.code}
+                  onChange={(e) => setEditFormData({ ...editFormData, code: e.target.value.toUpperCase() })}
+                  placeholder="Enter coupon code"
+                  className="uppercase"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-type">Discount Type</Label>
+                  <Select value={editFormData.type} onValueChange={(value) => setEditFormData({ ...editFormData, type: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Percentage">Percentage</SelectItem>
+                      <SelectItem value="Fixed">Fixed Amount</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-value">Discount Value</Label>
+                  <Input
+                    id="edit-value"
+                    type="number"
+                    value={editFormData.value}
+                    onChange={(e) => setEditFormData({ ...editFormData, value: Number(e.target.value) })}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-min">Min. Order Value</Label>
+                  <Input
+                    id="edit-min"
+                    type="number"
+                    value={editFormData.minOrder}
+                    onChange={(e) => setEditFormData({ ...editFormData, minOrder: Number(e.target.value) })}
+                    placeholder="0"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-max">Max. Discount</Label>
+                  <Input
+                    id="edit-max"
+                    type="number"
+                    value={editFormData.maxDiscount || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, maxDiscount: e.target.value ? Number(e.target.value) : null })}
+                    placeholder="No limit"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-from">Valid From</Label>
+                  <Input
+                    id="edit-from"
+                    type="date"
+                    value={editFormData.validFrom}
+                    onChange={(e) => setEditFormData({ ...editFormData, validFrom: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-to">Valid To</Label>
+                  <Input
+                    id="edit-to"
+                    type="date"
+                    value={editFormData.validTo}
+                    onChange={(e) => setEditFormData({ ...editFormData, validTo: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-limit">Usage Limit</Label>
+                <Input
+                  id="edit-limit"
+                  type="number"
+                  value={editFormData.usageLimit}
+                  onChange={(e) => setEditFormData({ ...editFormData, usageLimit: Number(e.target.value) })}
+                  placeholder="Unlimited"
+                />
+              </div>
+            </form>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEdit}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Duplicate Coupon Modal */}
+      <Dialog open={duplicateOpen} onOpenChange={setDuplicateOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Duplicate Coupon</DialogTitle>
+            <DialogDescription>Create a copy of this coupon with a new code</DialogDescription>
+          </DialogHeader>
+          {duplicateFormData && (
+            <form className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="duplicate-code">New Coupon Code</Label>
+                <Input
+                  id="duplicate-code"
+                  value={duplicateFormData.code}
+                  onChange={(e) => setDuplicateFormData({ ...duplicateFormData, code: e.target.value.toUpperCase() })}
+                  placeholder="Enter new coupon code"
+                  className="uppercase"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="duplicate-type">Discount Type</Label>
+                  <Select value={duplicateFormData.type} onValueChange={(value) => setDuplicateFormData({ ...duplicateFormData, type: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Percentage">Percentage</SelectItem>
+                      <SelectItem value="Fixed">Fixed Amount</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="duplicate-value">Discount Value</Label>
+                  <Input
+                    id="duplicate-value"
+                    type="number"
+                    value={duplicateFormData.value}
+                    onChange={(e) => setDuplicateFormData({ ...duplicateFormData, value: Number(e.target.value) })}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="duplicate-min">Min. Order Value</Label>
+                  <Input
+                    id="duplicate-min"
+                    type="number"
+                    value={duplicateFormData.minOrder}
+                    onChange={(e) => setDuplicateFormData({ ...duplicateFormData, minOrder: Number(e.target.value) })}
+                    placeholder="0"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="duplicate-max">Max. Discount</Label>
+                  <Input
+                    id="duplicate-max"
+                    type="number"
+                    value={duplicateFormData.maxDiscount || ""}
+                    onChange={(e) => setDuplicateFormData({ ...duplicateFormData, maxDiscount: e.target.value ? Number(e.target.value) : null })}
+                    placeholder="No limit"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="duplicate-from">Valid From</Label>
+                  <Input
+                    id="duplicate-from"
+                    type="date"
+                    value={duplicateFormData.validFrom}
+                    onChange={(e) => setDuplicateFormData({ ...duplicateFormData, validFrom: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="duplicate-to">Valid To</Label>
+                  <Input
+                    id="duplicate-to"
+                    type="date"
+                    value={duplicateFormData.validTo}
+                    onChange={(e) => setDuplicateFormData({ ...duplicateFormData, validTo: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="duplicate-limit">Usage Limit</Label>
+                <Input
+                  id="duplicate-limit"
+                  type="number"
+                  value={duplicateFormData.usageLimit}
+                  onChange={(e) => setDuplicateFormData({ ...duplicateFormData, usageLimit: Number(e.target.value) })}
+                  placeholder="Unlimited"
+                />
+              </div>
+            </form>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDuplicateOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmDuplicate}>Create Duplicate</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Coupon Modal */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Coupon</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the coupon <span className="font-semibold">{selectedCoupon?.code}</span>? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
