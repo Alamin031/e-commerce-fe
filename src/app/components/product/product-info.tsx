@@ -309,6 +309,13 @@ export function ProductInfo({ product }: ProductInfoProps) {
           <Share2 className="h-4 w-4" />
         </Button>
       </div>
+
+      {/* Notify Product Dialog */}
+      <NotifyProductDialog
+        product={product}
+        open={notifyDialogOpen}
+        onOpenChange={setNotifyDialogOpen}
+      />
     </div>
   )
 }
