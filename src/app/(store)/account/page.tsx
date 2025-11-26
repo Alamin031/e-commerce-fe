@@ -40,10 +40,13 @@ const quickStats = [
 ]
 
 export default function AccountPage() {
+  const { user } = useAuthStore()
+  const firstName = user?.name?.split(" ")[0] || "User"
+
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Welcome back, John!</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Welcome back, {firstName}!</h1>
         <p className="text-muted-foreground">Here&apos;s what&apos;s happening with your account.</p>
       </div>
 
