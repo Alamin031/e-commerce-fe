@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Bell, LogOut, Search, User, ChevronDown } from "lucide-react"
+import { Bell, LogOut, Search, User, ChevronDown, AlertCircle } from "lucide-react"
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
 import { useAuthStore } from "@/store/auth-store"
