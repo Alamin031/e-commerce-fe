@@ -7,6 +7,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Eye, EyeOff, Mail, Lock, ArrowRight, User, Shield, Loader2 } from "lucide-react"
 import { useOAuth } from "@/lib/oauth/oauth-context"
+import { useAuthStore } from "@/app/store/auth-store"
 import { toast } from "sonner"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
@@ -34,6 +35,7 @@ const demoAccounts = [
 export default function LoginPage() {
   const router = useRouter()
   const { initiateOAuth, isOAuthLoading } = useOAuth()
+  const { login } = useAuthStore()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [email, setEmail] = useState("")
@@ -42,9 +44,33 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    // Simulate login
+
+    // Validate credentials
+    const demoAccount = demoAccounts.find((acc) => acc.email === email && acc.password === password)
+
+    if (!demoAccount) {
+      toast.error("Invalid email or password")
+      setIsLoading(false)
+      return
+    }
+
+    // Simulate login delay
     await new Promise((resolve) => setTimeout(resolve, 1000))
+
+    // Create user object based on demo account
+    const userData = {
+      id: email === "admin@demo.com" ? "admin-1" : "user-1",
+      name: email === "admin@demo.com" ? "Admin User" : "John Doe",
+      email: email,
+      role: email === "admin@demo.com" ? "admin" : "user",
+    }
+
+    // Update auth store with user data
+    login(userData, "demo-token-123")
+
     setIsLoading(false)
+
+    // Redirect based on account type
     if (email === "admin@demo.com") {
       router.push("/admin")
     } else {
@@ -61,9 +87,33 @@ export default function LoginPage() {
     }
   }
 
-  const fillDemoCredentials = (demoEmail: string, demoPassword: string) => {
+  const handleDemoLogin = async (demoEmail: string, demoPassword: string) => {
     setEmail(demoEmail)
     setPassword(demoPassword)
+    setIsLoading(true)
+
+    // Simulate login delay
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+
+    // Create user object based on demo account
+    const userData = {
+      id: demoEmail === "admin@demo.com" ? "admin-1" : "user-1",
+      name: demoEmail === "admin@demo.com" ? "Admin User" : "John Doe",
+      email: demoEmail,
+      role: demoEmail === "admin@demo.com" ? "admin" : "user",
+    }
+
+    // Update auth store with user data
+    login(userData, "demo-token-123")
+
+    setIsLoading(false)
+
+    // Redirect based on account type
+    if (demoEmail === "admin@demo.com") {
+      router.push("/admin")
+    } else {
+      router.push("/account")
+    }
   }
 
   return (
@@ -80,8 +130,9 @@ export default function LoginPage() {
             <button
               key={account.email}
               type="button"
-              onClick={() => fillDemoCredentials(account.email, account.password)}
-              className="flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
+              onClick={() => handleDemoLogin(account.email, account.password)}
+              disabled={isLoading || isOAuthLoading}
+              className="flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-left text-sm transition-colors hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <account.icon className="h-4 w-4 text-muted-foreground" />
               <div>

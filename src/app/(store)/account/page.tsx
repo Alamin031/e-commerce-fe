@@ -1,9 +1,12 @@
+"use client"
+
 import Link from "next/link"
 import { Package, MapPin, Heart, CreditCard, Clock, TrendingUp } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card"
 import { Button } from "../../components/ui/button"
 import { Badge } from "../../components/ui/badge"
 import { formatPrice } from "../../lib/utils/format"
+import { useAuthStore } from "@/app/store/auth-store"
 
 const recentOrders = [
   {
@@ -37,10 +40,13 @@ const quickStats = [
 ]
 
 export default function AccountPage() {
+  const { user } = useAuthStore()
+  const firstName = user?.name?.split(" ")[0] || "User"
+
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Welcome back, John!</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Welcome back, {firstName}!</h1>
         <p className="text-muted-foreground">Here&apos;s what&apos;s happening with your account.</p>
       </div>
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Heart, BarChart3, ShoppingCart, Share2, Shield, Truck, RotateCcw, Check } from "lucide-react"
+import { Heart, BarChart3, ShoppingCart, Share2, Shield, Truck, RotateCcw, Check, AlertCircle } from "lucide-react"
 import { Button } from "../ui/button"
 import { Badge } from "../ui/badge"
 import { Separator } from "../ui/separator"
@@ -13,6 +13,7 @@ import { formatPrice, calculateDiscount, formatEMI } from "@/app/lib/utils/forma
 import { cn } from "@/app/lib/utils"
 import { EMICalculator } from "./emi-calculator"
 import { CarePlusAddon } from "./care-plus-addon"
+import { NotifyProductDialog } from "./notify-product-dialog"
 import type { Product } from "@/app/types"
 
 interface ProductInfoProps {
@@ -24,6 +25,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({})
   const [carePlusSelected, setCarePlusSelected] = useState(false)
   const [showEMI, setShowEMI] = useState(false)
+  const [notifyDialogOpen, setNotifyDialogOpen] = useState(false)
 
   const addToCart = useCartStore((state) => state.addItem)
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore()
@@ -247,6 +249,17 @@ export function ProductInfo({ product }: ProductInfoProps) {
         Buy Now
       </Button>
 
+      {/* Notify Product Button */}
+      <Button
+        variant="outline"
+        size="lg"
+        className="mt-3 w-full gap-2"
+        onClick={() => setNotifyDialogOpen(true)}
+      >
+        <AlertCircle className="h-5 w-5" />
+        Notify About Product
+      </Button>
+
       <Separator className="my-6" />
 
       {/* Highlights */}
@@ -296,6 +309,13 @@ export function ProductInfo({ product }: ProductInfoProps) {
           <Share2 className="h-4 w-4" />
         </Button>
       </div>
+
+      {/* Notify Product Dialog */}
+      <NotifyProductDialog
+        product={product}
+        open={notifyDialogOpen}
+        onOpenChange={setNotifyDialogOpen}
+      />
     </div>
   )
 }

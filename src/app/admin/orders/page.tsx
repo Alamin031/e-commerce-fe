@@ -153,6 +153,7 @@ export default function AdminOrdersPage() {
   const [viewOpen, setViewOpen] = useState(false)
   const [addDrawerOpen, setAddDrawerOpen] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const [newOrderForm, setNewOrderForm] = useState({
     customer: "",
     email: "",
@@ -162,6 +163,42 @@ export default function AdminOrdersPage() {
     status: "Pending",
     payment: "Pending",
   })
+
+  const validateForm = () => {
+    const errors: Record<string, string> = {}
+
+    if (!newOrderForm.customer.trim()) {
+      errors.customer = "Customer name is required"
+    }
+    if (!newOrderForm.email.trim()) {
+      errors.email = "Email is required"
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newOrderForm.email)) {
+      errors.email = "Please enter a valid email"
+    }
+    if (!newOrderForm.phone.trim()) {
+      errors.phone = "Phone is required"
+    }
+    if (!newOrderForm.address.trim()) {
+      errors.address = "Address is required"
+    }
+
+    const validItems = newOrderForm.items.filter(item => item.name.trim() !== "")
+    if (validItems.length === 0) {
+      errors.items = "At least one item is required"
+    }
+
+    validItems.forEach((item, index) => {
+      if (item.quantity < 1) {
+        errors[`item-qty-${index}`] = "Quantity must be at least 1"
+      }
+      if (item.price < 0) {
+        errors[`item-price-${index}`] = "Price cannot be negative"
+      }
+    })
+
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
+  }
 
   const handleViewClick = (order: Order) => {
     setSelectedOrder(order)
@@ -281,19 +318,24 @@ export default function AdminOrdersPage() {
   }
 
   const handleAddOrder = () => {
-    const totalAmount = newOrderForm.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+    if (!validateForm()) {
+      return
+    }
+
+    const validItems = newOrderForm.items.filter(item => item.name.trim() !== "")
+    const totalAmount = validItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
     const newOrder: Order = {
       id: `ORD-2024-${String(orders.length + 1).padStart(3, "0")}`,
       customer: newOrderForm.customer,
       email: newOrderForm.email,
-      items: newOrderForm.items.length,
+      items: validItems.length,
       total: totalAmount,
       status: newOrderForm.status,
       payment: newOrderForm.payment,
       date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
       address: newOrderForm.address,
       phone: newOrderForm.phone,
-      orderItems: newOrderForm.items.map((item, idx) => ({
+      orderItems: validItems.map((item, idx) => ({
         id: String(idx),
         name: item.name,
         quantity: item.quantity,
@@ -302,6 +344,7 @@ export default function AdminOrdersPage() {
     }
     setOrders([newOrder, ...orders])
     setAddDrawerOpen(false)
+    setFormErrors({})
     setNewOrderForm({
       customer: "",
       email: "",
@@ -576,170 +619,291 @@ export default function AdminOrdersPage() {
       </Dialog>
 
       {/* Add Manual Order Drawer */}
-      <Sheet open={addDrawerOpen} onOpenChange={setAddDrawerOpen}>
-        <SheetContent side="right" className="w-full sm:w-[600px] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Add Manual Order</SheetTitle>
-            <SheetDescription>Create a new order manually</SheetDescription>
+      <Sheet open={addDrawerOpen} onOpenChange={(open) => {
+        setAddDrawerOpen(open)
+        if (!open) {
+          setFormErrors({})
+        }
+      }}>
+        <SheetContent side="right" className="w-full sm:w-[650px] overflow-y-auto flex flex-col">
+          <SheetHeader className="pb-4">
+            <SheetTitle className="text-2xl">Add Manual Order</SheetTitle>
+            <SheetDescription>Create a new order by filling in the customer and order details below</SheetDescription>
           </SheetHeader>
 
-          <div className="space-y-6 py-4">
-            <div className="space-y-4">
-              <h3 className="font-semibold">Customer Information</h3>
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <Label htmlFor="order-customer">Customer Name</Label>
-                  <Input
-                    id="order-customer"
-                    value={newOrderForm.customer}
-                    onChange={(e) => setNewOrderForm({ ...newOrderForm, customer: e.target.value })}
-                    placeholder="Enter customer name"
-                  />
+          <div className="flex-1 overflow-y-auto">
+            <div className="space-y-6 py-4">
+              {/* Customer Information Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 pb-2">
+                  <h3 className="text-lg font-semibold">Customer Information</h3>
+                  <span className="text-sm text-red-500">*</span>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="order-email">Email</Label>
-                  <Input
-                    id="order-email"
-                    type="email"
-                    value={newOrderForm.email}
-                    onChange={(e) => setNewOrderForm({ ...newOrderForm, email: e.target.value })}
-                    placeholder="Enter customer email"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="order-phone">Phone</Label>
-                  <Input
-                    id="order-phone"
-                    value={newOrderForm.phone}
-                    onChange={(e) => setNewOrderForm({ ...newOrderForm, phone: e.target.value })}
-                    placeholder="Enter customer phone"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="order-address">Address</Label>
-                  <Textarea
-                    id="order-address"
-                    value={newOrderForm.address}
-                    onChange={(e) => setNewOrderForm({ ...newOrderForm, address: e.target.value })}
-                    placeholder="Enter delivery address"
-                    rows={3}
-                  />
-                </div>
-              </div>
-            </div>
+                <div className="rounded-lg border border-border bg-card/50 p-4 space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="order-customer" className="flex gap-1">
+                      Customer Name
+                      <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="order-customer"
+                      value={newOrderForm.customer}
+                      onChange={(e) => {
+                        setNewOrderForm({ ...newOrderForm, customer: e.target.value })
+                        if (formErrors.customer) setFormErrors({ ...formErrors, customer: "" })
+                      }}
+                      placeholder="John Doe"
+                      className={formErrors.customer ? "border-red-500 focus-visible:ring-red-500" : ""}
+                    />
+                    {formErrors.customer && (
+                      <p className="text-sm text-red-500 flex items-center gap-1">
+                        <span>•</span> {formErrors.customer}
+                      </p>
+                    )}
+                  </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold">Order Items</h3>
-                <Button size="sm" variant="outline" onClick={addOrderItem} className="gap-1">
-                  <Plus className="h-4 w-4" />
-                  Add Item
-                </Button>
-              </div>
-              <div className="space-y-3">
-                {newOrderForm.items.map((item, index) => (
-                  <div key={index} className="space-y-2 rounded-lg border border-border p-3">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm font-medium">Item {index + 1}</Label>
-                      {newOrderForm.items.length > 1 && (
-                        <button onClick={() => removeOrderItem(index)} className="text-destructive hover:text-destructive/80">
-                          <X className="h-4 w-4" />
-                        </button>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="order-email" className="flex gap-1">
+                        Email
+                        <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="order-email"
+                        type="email"
+                        value={newOrderForm.email}
+                        onChange={(e) => {
+                          setNewOrderForm({ ...newOrderForm, email: e.target.value })
+                          if (formErrors.email) setFormErrors({ ...formErrors, email: "" })
+                        }}
+                        placeholder="john@example.com"
+                        className={formErrors.email ? "border-red-500 focus-visible:ring-red-500" : ""}
+                      />
+                      {formErrors.email && (
+                        <p className="text-sm text-red-500 flex items-center gap-1">
+                          <span>•</span> {formErrors.email}
+                        </p>
                       )}
                     </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="col-span-2 space-y-1">
-                        <Label htmlFor={`item-name-${index}`} className="text-xs">
+
+                    <div className="space-y-2">
+                      <Label htmlFor="order-phone" className="flex gap-1">
+                        Phone
+                        <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="order-phone"
+                        value={newOrderForm.phone}
+                        onChange={(e) => {
+                          setNewOrderForm({ ...newOrderForm, phone: e.target.value })
+                          if (formErrors.phone) setFormErrors({ ...formErrors, phone: "" })
+                        }}
+                        placeholder="+880 1234567890"
+                        className={formErrors.phone ? "border-red-500 focus-visible:ring-red-500" : ""}
+                      />
+                      {formErrors.phone && (
+                        <p className="text-sm text-red-500 flex items-center gap-1">
+                          <span>•</span> {formErrors.phone}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="order-address" className="flex gap-1">
+                      Delivery Address
+                      <span className="text-red-500">*</span>
+                    </Label>
+                    <Textarea
+                      id="order-address"
+                      value={newOrderForm.address}
+                      onChange={(e) => {
+                        setNewOrderForm({ ...newOrderForm, address: e.target.value })
+                        if (formErrors.address) setFormErrors({ ...formErrors, address: "" })
+                      }}
+                      placeholder="Enter full delivery address"
+                      rows={3}
+                      className={formErrors.address ? "border-red-500 focus-visible:ring-red-500" : ""}
+                    />
+                    {formErrors.address && (
+                      <p className="text-sm text-red-500 flex items-center gap-1">
+                        <span>•</span> {formErrors.address}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Order Items Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-2">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-semibold">Order Items</h3>
+                    <span className="text-sm text-red-500">*</span>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={addOrderItem}
+                    className="gap-1"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Item
+                  </Button>
+                </div>
+
+                {formErrors.items && (
+                  <p className="text-sm text-red-500 flex items-center gap-1 bg-red-50 border border-red-200 rounded px-3 py-2">
+                    <span>•</span> {formErrors.items}
+                  </p>
+                )}
+
+                <div className="space-y-3">
+                  {newOrderForm.items.map((item, index) => (
+                    <div key={index} className="space-y-3 rounded-lg border border-border bg-card/30 p-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-muted-foreground">Item {index + 1}</span>
+                        {newOrderForm.items.length > 1 && (
+                          <button
+                            onClick={() => removeOrderItem(index)}
+                            className="text-muted-foreground hover:text-destructive transition-colors"
+                            title="Remove item"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor={`item-name-${index}`} className="text-xs font-medium">
                           Product Name
                         </Label>
                         <Input
                           id={`item-name-${index}`}
                           value={item.name}
                           onChange={(e) => updateOrderItem(index, "name", e.target.value)}
-                          placeholder="Product name"
+                          placeholder="e.g., iPhone 15 Pro Max"
                           className="text-sm"
                         />
                       </div>
-                      <div className="space-y-1">
-                        <Label htmlFor={`item-qty-${index}`} className="text-xs">
-                          Qty
-                        </Label>
-                        <Input
-                          id={`item-qty-${index}`}
-                          type="number"
-                          value={item.quantity}
-                          onChange={(e) => updateOrderItem(index, "quantity", Number(e.target.value))}
-                          min="1"
-                          className="text-sm"
-                        />
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label htmlFor={`item-qty-${index}`} className="text-xs font-medium">
+                            Quantity
+                          </Label>
+                          <Input
+                            id={`item-qty-${index}`}
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) => updateOrderItem(index, "quantity", Number(e.target.value))}
+                            min="1"
+                            className={`text-sm ${formErrors[`item-qty-${index}`] ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                          />
+                          {formErrors[`item-qty-${index}`] && (
+                            <p className="text-xs text-red-500 flex items-center gap-1">
+                              <span>•</span> {formErrors[`item-qty-${index}`]}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor={`item-price-${index}`} className="text-xs font-medium">
+                            Price
+                          </Label>
+                          <Input
+                            id={`item-price-${index}`}
+                            type="number"
+                            value={item.price}
+                            onChange={(e) => updateOrderItem(index, "price", Number(e.target.value))}
+                            min="0"
+                            placeholder="0"
+                            className={`text-sm ${formErrors[`item-price-${index}`] ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                          />
+                          {formErrors[`item-price-${index}`] && (
+                            <p className="text-xs text-red-500 flex items-center gap-1">
+                              <span>•</span> {formErrors[`item-price-${index}`]}
+                            </p>
+                          )}
+                        </div>
                       </div>
+
+                      {item.name && item.price > 0 && (
+                        <div className="rounded bg-muted px-3 py-2 flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Subtotal</span>
+                          <span className="text-sm font-semibold">{formatPrice(item.price * item.quantity)}</span>
+                        </div>
+                      )}
                     </div>
-                    <div className="space-y-1">
-                      <Label htmlFor={`item-price-${index}`} className="text-xs">
-                        Price
-                      </Label>
-                      <Input
-                        id={`item-price-${index}`}
-                        type="number"
-                        value={item.price}
-                        onChange={(e) => updateOrderItem(index, "price", Number(e.target.value))}
-                        placeholder="0"
-                        className="text-sm"
-                      />
-                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Order Status Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold pb-2">Order Status</h3>
+                <div className="rounded-lg border border-border bg-card/50 p-4 grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="order-status" className="text-sm font-medium">
+                      Order Status
+                    </Label>
+                    <Select value={newOrderForm.status} onValueChange={(value) => setNewOrderForm({ ...newOrderForm, status: value })}>
+                      <SelectTrigger id="order-status">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Pending">Pending</SelectItem>
+                        <SelectItem value="Processing">Processing</SelectItem>
+                        <SelectItem value="Shipped">Shipped</SelectItem>
+                        <SelectItem value="Delivered">Delivered</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            <div className="space-y-4">
-              <h3 className="font-semibold">Order Status</h3>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="order-status">Status</Label>
-                  <Select value={newOrderForm.status} onValueChange={(value) => setNewOrderForm({ ...newOrderForm, status: value })}>
-                    <SelectTrigger id="order-status">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Pending">Pending</SelectItem>
-                      <SelectItem value="Processing">Processing</SelectItem>
-                      <SelectItem value="Shipped">Shipped</SelectItem>
-                      <SelectItem value="Delivered">Delivered</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="order-payment">Payment Status</Label>
-                  <Select value={newOrderForm.payment} onValueChange={(value) => setNewOrderForm({ ...newOrderForm, payment: value })}>
-                    <SelectTrigger id="order-payment">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Pending">Pending</SelectItem>
-                      <SelectItem value="Paid">Paid</SelectItem>
-                      <SelectItem value="Refunded">Refunded</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-2">
+                    <Label htmlFor="order-payment" className="text-sm font-medium">
+                      Payment Status
+                    </Label>
+                    <Select value={newOrderForm.payment} onValueChange={(value) => setNewOrderForm({ ...newOrderForm, payment: value })}>
+                      <SelectTrigger id="order-payment">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Pending">Pending</SelectItem>
+                        <SelectItem value="Paid">Paid</SelectItem>
+                        <SelectItem value="Refunded">Refunded</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="rounded-lg bg-muted p-4">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold">Total Amount:</span>
-                <span className="text-lg font-bold">
-                  {formatPrice(newOrderForm.items.reduce((sum, item) => sum + item.price * item.quantity, 0))}
-                </span>
+              {/* Total Amount Section */}
+              <div className="rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border border-slate-200 dark:border-slate-700 p-5">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Total Amount</span>
+                  <span className="text-3xl font-bold text-slate-900 dark:text-slate-50">
+                    {formatPrice(newOrderForm.items.reduce((sum, item) => sum + item.price * item.quantity, 0))}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
-          <SheetFooter>
-            <Button variant="outline" onClick={() => setAddDrawerOpen(false)}>
+          <SheetFooter className="border-t pt-4 gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setAddDrawerOpen(false)}
+              className="flex-1"
+            >
               Cancel
             </Button>
-            <Button onClick={handleAddOrder}>Create Order</Button>
+            <Button
+              onClick={handleAddOrder}
+              className="flex-1"
+            >
+              Create Order
+            </Button>
           </SheetFooter>
         </SheetContent>
       </Sheet>

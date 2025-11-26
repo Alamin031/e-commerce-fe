@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Search, ShoppingCart, Heart, User, Menu, X, ChevronDown, BarChart3, Phone, MapPin } from "lucide-react"
 import { Button } from "../ui/button"
 import { Badge } from "../ui/badge"
@@ -36,11 +36,12 @@ export function Navbar() {
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
 
   const cartItemCount = useCartStore((state) => state.getItemCount())
   const wishlistCount = useWishlistStore((state) => state.items.length)
   const compareCount = useCompareStore((state) => state.items.length)
-  const { isAuthenticated, user } = useAuthStore()
+  const { isAuthenticated, user, logout } = useAuthStore()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -49,6 +50,11 @@ export function Navbar() {
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
+
+  const handleLogout = () => {
+    logout()
+    router.push("/")
+  }
 
   return (
     <>
@@ -193,13 +199,13 @@ export function Navbar() {
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard">Dashboard</Link>
+                    <Link href="/account">Dashboard</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard/orders">My Orders</Link>
+                    <Link href="/account/orders">My Orders</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard/wishlist">Wishlist</Link>
+                    <Link href="/account/wishlist">Wishlist</Link>
                   </DropdownMenuItem>
                   {user?.role === "admin" && (
                     <>
@@ -210,7 +216,9 @@ export function Navbar() {
                     </>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-destructive">Logout</DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout} className="text-destructive cursor-pointer">
+                    Logout
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
@@ -295,12 +303,20 @@ export function Navbar() {
                     {isAuthenticated ? (
                       <div className="space-y-2">
                         <SheetClose asChild>
-                          <Link href="/dashboard">
+                          <Link href="/account">
                             <Button variant="outline" className="w-full bg-transparent">
                               Dashboard
                             </Button>
                           </Link>
                         </SheetClose>
+                        <button
+                          onClick={handleLogout}
+                          className="w-full"
+                        >
+                          <Button variant="destructive" className="w-full">
+                            Sign Out
+                          </Button>
+                        </button>
                       </div>
                     ) : (
                       <div className="grid gap-2">
