@@ -42,6 +42,7 @@ const sidebarLinks = [
   { href: "/admin/reviews", label: "Reviews", icon: MessageSquare, badge: "5" },
   { href: "/admin/emi", label: "EMI Plans", icon: CreditCard },
   { href: "/admin/product-loyalty-points", label: "Loyalty Points", icon: TrendingUp },
+  { href: "/admin/notify-products", label: "Notify Products", icon: AlertCircle, badge: "new" },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ]
 
