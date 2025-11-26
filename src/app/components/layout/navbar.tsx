@@ -216,7 +216,9 @@ export function Navbar() {
                     </>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-destructive">Logout</DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout} className="text-destructive cursor-pointer">
+                    Logout
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
