@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Search, ShoppingCart, Heart, User, Menu, X, ChevronDown, BarChart3, Phone, MapPin } from "lucide-react"
 import { Button } from "../ui/button"
 import { Badge } from "../ui/badge"
