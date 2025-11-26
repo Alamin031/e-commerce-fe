@@ -1,8 +1,7 @@
-"use client"
-
-import { useState } from "react"
 import type { Metadata } from "next"
-import { Mail, Phone, MapPin, Clock, Send } from "lucide-react"
+import { ContactUsForm } from "./contact-form"
+import { Mail, Phone, MapPin, Clock } from "lucide-react"
+import { generateSEO } from "../../../lib/seo"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
