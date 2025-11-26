@@ -153,6 +153,7 @@ export default function AdminOrdersPage() {
   const [viewOpen, setViewOpen] = useState(false)
   const [addDrawerOpen, setAddDrawerOpen] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const [newOrderForm, setNewOrderForm] = useState({
     customer: "",
     email: "",
@@ -162,6 +163,42 @@ export default function AdminOrdersPage() {
     status: "Pending",
     payment: "Pending",
   })
+
+  const validateForm = () => {
+    const errors: Record<string, string> = {}
+
+    if (!newOrderForm.customer.trim()) {
+      errors.customer = "Customer name is required"
+    }
+    if (!newOrderForm.email.trim()) {
+      errors.email = "Email is required"
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newOrderForm.email)) {
+      errors.email = "Please enter a valid email"
+    }
+    if (!newOrderForm.phone.trim()) {
+      errors.phone = "Phone is required"
+    }
+    if (!newOrderForm.address.trim()) {
+      errors.address = "Address is required"
+    }
+
+    const validItems = newOrderForm.items.filter(item => item.name.trim() !== "")
+    if (validItems.length === 0) {
+      errors.items = "At least one item is required"
+    }
+
+    validItems.forEach((item, index) => {
+      if (item.quantity < 1) {
+        errors[`item-qty-${index}`] = "Quantity must be at least 1"
+      }
+      if (item.price < 0) {
+        errors[`item-price-${index}`] = "Price cannot be negative"
+      }
+    })
+
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
+  }
 
   const handleViewClick = (order: Order) => {
     setSelectedOrder(order)
