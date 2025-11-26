@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Code2, Package, Database, Hook, Layers, ArrowRight } from "lucide-react"
+import { Code2, Package, Database, Zap, Layers, ArrowRight } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card"
 import { generateSEO } from "../../lib/seo"
 
