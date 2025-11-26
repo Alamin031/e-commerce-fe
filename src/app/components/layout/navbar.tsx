@@ -36,11 +36,12 @@ export function Navbar() {
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
 
   const cartItemCount = useCartStore((state) => state.getItemCount())
   const wishlistCount = useWishlistStore((state) => state.items.length)
   const compareCount = useCompareStore((state) => state.items.length)
-  const { isAuthenticated, user } = useAuthStore()
+  const { isAuthenticated, user, logout } = useAuthStore()
 
   useEffect(() => {
     const handleScroll = () => {
