@@ -17,11 +17,13 @@ import {
   FolderTree,
   CreditCard,
   TrendingUp,
+  AlertCircle,
 } from "lucide-react"
 import { Input } from "../components/ui/input"
 import { Button } from "../components/ui/button"
 import { Badge } from "../components/ui/badge"
 import { Suspense } from "react"
+import { AdminHeader } from "../components/admin/admin-header"
 
 export const metadata: Metadata = {
   title: "Admin Dashboard",
