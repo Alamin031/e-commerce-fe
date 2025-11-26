@@ -8,10 +8,6 @@ import { User, Package, MapPin, Heart, CreditCard, Bell, Settings, LogOut, Chevr
 import { Button } from "../../components/ui/button"
 import { useAuthStore } from "@/app/store/auth-store"
 
-export const metadata: Metadata = {
-  title: "My Account",
-  description: "Manage your account settings and orders.",
-}
 
 const sidebarLinks = [
   { href: "/account", label: "Dashboard", icon: User },
