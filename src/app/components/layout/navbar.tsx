@@ -51,6 +51,11 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
+  const handleLogout = () => {
+    logout()
+    router.push("/")
+  }
+
   return (
     <>
       {/* Top bar */}
