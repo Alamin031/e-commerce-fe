@@ -36,6 +36,8 @@ const sidebarLinks = [
   { href: "/admin/banners", label: "Banners", icon: ImageIcon },
   { href: "/admin/pages", label: "Pages", icon: FileText },
   { href: "/admin/reviews", label: "Reviews", icon: MessageSquare, badge: "5" },
+  { href: "/admin/emi", label: "EMI Plans", icon: CreditCard },
+  { href: "/admin/product-loyalty-points", label: "Loyalty Points", icon: TrendingUp },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ]
 
