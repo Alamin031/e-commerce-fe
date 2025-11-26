@@ -303,12 +303,20 @@ export function Navbar() {
                     {isAuthenticated ? (
                       <div className="space-y-2">
                         <SheetClose asChild>
-                          <Link href="/dashboard">
+                          <Link href="/account">
                             <Button variant="outline" className="w-full bg-transparent">
                               Dashboard
                             </Button>
                           </Link>
                         </SheetClose>
+                        <button
+                          onClick={handleLogout}
+                          className="w-full"
+                        >
+                          <Button variant="destructive" className="w-full">
+                            Sign Out
+                          </Button>
+                        </button>
                       </div>
                     ) : (
                       <div className="grid gap-2">
