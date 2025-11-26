@@ -318,19 +318,24 @@ export default function AdminOrdersPage() {
   }
 
   const handleAddOrder = () => {
-    const totalAmount = newOrderForm.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+    if (!validateForm()) {
+      return
+    }
+
+    const validItems = newOrderForm.items.filter(item => item.name.trim() !== "")
+    const totalAmount = validItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
     const newOrder: Order = {
       id: `ORD-2024-${String(orders.length + 1).padStart(3, "0")}`,
       customer: newOrderForm.customer,
       email: newOrderForm.email,
-      items: newOrderForm.items.length,
+      items: validItems.length,
       total: totalAmount,
       status: newOrderForm.status,
       payment: newOrderForm.payment,
       date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
       address: newOrderForm.address,
       phone: newOrderForm.phone,
-      orderItems: newOrderForm.items.map((item, idx) => ({
+      orderItems: validItems.map((item, idx) => ({
         id: String(idx),
         name: item.name,
         quantity: item.quantity,
@@ -339,6 +344,7 @@ export default function AdminOrdersPage() {
     }
     setOrders([newOrder, ...orders])
     setAddDrawerOpen(false)
+    setFormErrors({})
     setNewOrderForm({
       customer: "",
       email: "",
