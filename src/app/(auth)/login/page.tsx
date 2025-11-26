@@ -35,6 +35,7 @@ const demoAccounts = [
 export default function LoginPage() {
   const router = useRouter()
   const { initiateOAuth, isOAuthLoading } = useOAuth()
+  const { login } = useAuthStore()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [email, setEmail] = useState("")
@@ -43,9 +44,33 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    // Simulate login
+
+    // Validate credentials
+    const demoAccount = demoAccounts.find((acc) => acc.email === email && acc.password === password)
+
+    if (!demoAccount) {
+      toast.error("Invalid email or password")
+      setIsLoading(false)
+      return
+    }
+
+    // Simulate login delay
     await new Promise((resolve) => setTimeout(resolve, 1000))
+
+    // Create user object based on demo account
+    const userData = {
+      id: email === "admin@demo.com" ? "admin-1" : "user-1",
+      name: email === "admin@demo.com" ? "Admin User" : "John Doe",
+      email: email,
+      role: email === "admin@demo.com" ? "admin" : "user",
+    }
+
+    // Update auth store with user data
+    login(userData, "demo-token-123")
+
     setIsLoading(false)
+
+    // Redirect based on account type
     if (email === "admin@demo.com") {
       router.push("/admin")
     } else {
