@@ -87,9 +87,33 @@ export default function LoginPage() {
     }
   }
 
-  const fillDemoCredentials = (demoEmail: string, demoPassword: string) => {
+  const handleDemoLogin = async (demoEmail: string, demoPassword: string) => {
     setEmail(demoEmail)
     setPassword(demoPassword)
+    setIsLoading(true)
+
+    // Simulate login delay
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+
+    // Create user object based on demo account
+    const userData = {
+      id: demoEmail === "admin@demo.com" ? "admin-1" : "user-1",
+      name: demoEmail === "admin@demo.com" ? "Admin User" : "John Doe",
+      email: demoEmail,
+      role: demoEmail === "admin@demo.com" ? "admin" : "user",
+    }
+
+    // Update auth store with user data
+    login(userData, "demo-token-123")
+
+    setIsLoading(false)
+
+    // Redirect based on account type
+    if (demoEmail === "admin@demo.com") {
+      router.push("/admin")
+    } else {
+      router.push("/account")
+    }
   }
 
   return (
