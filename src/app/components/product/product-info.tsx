@@ -25,6 +25,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({})
   const [carePlusSelected, setCarePlusSelected] = useState(false)
   const [showEMI, setShowEMI] = useState(false)
+  const [notifyDialogOpen, setNotifyDialogOpen] = useState(false)
 
   const addToCart = useCartStore((state) => state.addItem)
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore()
