@@ -33,6 +33,7 @@ const demoAccounts = [
 
 export default function LoginPage() {
   const router = useRouter()
+  const { initiateOAuth, isOAuthLoading } = useOAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [email, setEmail] = useState("")
@@ -48,6 +49,15 @@ export default function LoginPage() {
       router.push("/admin")
     } else {
       router.push("/account")
+    }
+  }
+
+  const handleOAuthClick = async (provider: "google" | "facebook") => {
+    try {
+      initiateOAuth(provider)
+    } catch (error) {
+      toast.error(`Failed to initiate ${provider} login`)
+      console.error(`${provider} OAuth error:`, error)
     }
   }
 
