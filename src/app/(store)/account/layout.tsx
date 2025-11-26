@@ -1,7 +1,12 @@
+"use client"
+
+import { useEffect } from "react"
 import type React from "react"
-import type { Metadata } from "next"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { User, Package, MapPin, Heart, CreditCard, Bell, Settings, LogOut, ChevronRight } from "lucide-react"
+import { Button } from "../../components/ui/button"
+import { useAuthStore } from "@/app/store/auth-store"
 
 export const metadata: Metadata = {
   title: "My Account",
