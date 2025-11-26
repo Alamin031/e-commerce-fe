@@ -249,6 +249,17 @@ export function ProductInfo({ product }: ProductInfoProps) {
         Buy Now
       </Button>
 
+      {/* Notify Product Button */}
+      <Button
+        variant="outline"
+        size="lg"
+        className="mt-3 w-full gap-2"
+        onClick={() => setNotifyDialogOpen(true)}
+      >
+        <AlertCircle className="h-5 w-5" />
+        Notify About Product
+      </Button>
+
       <Separator className="my-6" />
 
       {/* Highlights */}
