@@ -90,29 +90,9 @@ export default function AdminLayout({
       </Suspense>
 
       <div className="flex-1 lg:ml-64">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-background px-6">
-          <Suspense fallback={<div>Loading...</div>}>
-            <div className="relative flex-1 md:max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Search..." className="pl-9" />
-            </div>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs text-destructive-foreground">
-                3
-              </span>
-            </Button>
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-full bg-primary text-center text-sm font-bold leading-9 text-primary-foreground">
-                A
-              </div>
-              <div className="hidden md:block">
-                <p className="text-sm font-medium">Admin</p>
-                <p className="text-xs text-muted-foreground">admin@store.com</p>
-              </div>
-            </div>
-          </Suspense>
-        </header>
+        <Suspense fallback={<div className="h-16 bg-background" />}>
+          <AdminHeader />
+        </Suspense>
 
         <main className="p-6">{children}</main>
       </div>
