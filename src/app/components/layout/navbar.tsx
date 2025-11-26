@@ -199,13 +199,13 @@ export function Navbar() {
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard">Dashboard</Link>
+                    <Link href="/account">Dashboard</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard/orders">My Orders</Link>
+                    <Link href="/account/orders">My Orders</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard/wishlist">Wishlist</Link>
+                    <Link href="/account/wishlist">Wishlist</Link>
                   </DropdownMenuItem>
                   {user?.role === "admin" && (
                     <>
