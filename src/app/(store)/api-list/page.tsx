@@ -374,7 +374,7 @@ export default function APIListPage() {
       {/* Custom Hooks */}
       <section>
         <div className="mb-8 flex items-center gap-3">
-          <Hook className="h-8 w-8 text-primary" />
+          <Zap className="h-8 w-8 text-primary" />
           <h2 className="text-3xl font-bold tracking-tight">Custom Hooks</h2>
         </div>
         <div className="space-y-4">
