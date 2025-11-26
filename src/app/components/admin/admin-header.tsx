@@ -93,5 +93,3 @@ export function AdminHeader() {
     </header>
   )
 }
-
-import { AlertCircle } from "lucide-react"
