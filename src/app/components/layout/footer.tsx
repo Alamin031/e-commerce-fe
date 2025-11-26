@@ -38,6 +38,7 @@ const footerLinks = {
     { name: "Store Locator", href: "/stores" },
     { name: "Blog", href: "/blog" },
     { name: "Press", href: "/press" },
+    { name: "API List", href: "/api-list" },
   ],
   legal: [
     { name: "Privacy Policy", href: "/privacy" },
