@@ -130,8 +130,9 @@ export default function LoginPage() {
             <button
               key={account.email}
               type="button"
-              onClick={() => fillDemoCredentials(account.email, account.password)}
-              className="flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
+              onClick={() => handleDemoLogin(account.email, account.password)}
+              disabled={isLoading || isOAuthLoading}
+              className="flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-left text-sm transition-colors hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <account.icon className="h-4 w-4 text-muted-foreground" />
               <div>
