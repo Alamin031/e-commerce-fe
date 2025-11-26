@@ -1,43 +1,8 @@
-// ==================== COMMON TYPES ====================
-export interface ApiResponse<T = unknown> {
-  success: boolean
-  data?: T
-  error?: string
-  message?: string
-  code?: string
-}
-
-export interface PaginatedResponse<T> {
-  items: T[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
-
-export interface AuthToken {
-  token: string
-  refreshToken?: string
-  expiresIn?: number
-}
-
-// ==================== AUTH TYPES ====================
-export interface User {
-  id: string
-  email: string
-  name: string
-  phone?: string
-  avatar?: string
-  role: "user" | "admin" | "manager"
-  isVerified: boolean
-  createdAt: string
-  updatedAt: string
-}
-
+// ==================== Auth Types ====================
 export interface RegisterRequest {
+  name: string
   email: string
   password: string
-  name: string
   phone?: string
 }
 
@@ -48,9 +13,7 @@ export interface LoginRequest {
 
 export interface SocialLoginRequest {
   provider: "google" | "facebook"
-  token: string
-  email?: string
-  name?: string
+  accessToken: string
 }
 
 export interface AuthResponse {
@@ -59,34 +22,44 @@ export interface AuthResponse {
   refreshToken?: string
 }
 
-// ==================== USER TYPES ====================
-export interface UserProfile extends User {
-  bio?: string
-  address?: string
-  city?: string
-  state?: string
-  zipCode?: string
-  loyaltyPoints?: number
-  tier?: "bronze" | "silver" | "gold"
+// ==================== User Types ====================
+export interface User {
+  id: string
+  name: string
+  email: string
+  phone?: string
+  avatar?: string
+  role: "user" | "admin" | "management"
+  addresses: Address[]
+  createdAt: string
+  updatedAt: string
 }
 
-export interface WishlistItem {
+export interface Address {
   id: string
   userId: string
-  productId: string
-  product?: Product
+  name: string
+  phone: string
+  address: string
+  city: string
+  area: string
+  isDefault: boolean
   createdAt: string
 }
 
-export interface CompareItem {
-  id: string
-  userId: string
-  productId: string
-  product?: Product
-  createdAt: string
+export interface UpdateUserRequest {
+  name?: string
+  email?: string
+  phone?: string
+  avatar?: string
 }
 
-// ==================== CATEGORY TYPES ====================
+export interface UserListResponse {
+  data: User[]
+  pagination: PaginationMeta
+}
+
+// ==================== Category Types ====================
 export interface Category {
   id: string
   name: string
@@ -94,61 +67,160 @@ export interface Category {
   description?: string
   image?: string
   icon?: string
-  featured?: boolean
   parentId?: string
+  children?: Category[]
+  productCount?: number
+  isFeatured?: boolean
   order?: number
   createdAt: string
   updatedAt: string
 }
 
-export interface CategoryWithProducts extends Category {
-  products: Product[]
-  productCount: number
+export interface CreateCategoryRequest {
+  name: string
+  description?: string
+  image?: string
+  icon?: string
+  parentId?: string
+  isFeatured?: boolean
 }
 
-// ==================== BRAND TYPES ====================
+export interface UpdateCategoryRequest {
+  name?: string
+  description?: string
+  image?: string
+  icon?: string
+  parentId?: string
+  isFeatured?: boolean
+}
+
+export interface CategoryProductsResponse {
+  data: Product[]
+  filters: CategoryFilters
+  pagination: PaginationMeta
+}
+
+export interface CategoryFilters {
+  brands: Brand[]
+  priceRange: { min: number; max: number }
+  ratings: number[]
+  availability: string[]
+}
+
+// ==================== Brand Types ====================
 export interface Brand {
   id: string
   name: string
   slug: string
-  logo?: string
   description?: string
-  website?: string
-  featured?: boolean
+  logo: string
+  banner?: string
+  productCount?: number
+  isFeatured?: boolean
   order?: number
   createdAt: string
   updatedAt: string
 }
 
-export interface BrandWithProducts extends Brand {
-  products: Product[]
-  productCount: number
+export interface CreateBrandRequest {
+  name: string
+  description?: string
+  logo: string
+  banner?: string
+  isFeatured?: boolean
 }
 
-// ==================== PRODUCT TYPES ====================
+export interface UpdateBrandRequest {
+  name?: string
+  description?: string
+  logo?: string
+  banner?: string
+  isFeatured?: boolean
+}
+
+export interface BrandProductsResponse {
+  data: Product[]
+  brand: Brand
+  pagination: PaginationMeta
+}
+
+// ==================== Product Types ====================
 export interface Product {
   id: string
   name: string
   slug: string
   description: string
-  shortDescription?: string
   price: number
   originalPrice?: number
-  discount?: number
-  category: Category | string
-  brand: Brand | string
-  image: string
-  images?: string[]
+  images: string[]
+  thumbnail?: string
+  category: Category
+  brand: Brand
+  variants: ProductVariant[]
+  highlights: string[]
+  specifications: Record<string, string>
   stock: number
+  sku: string
+  warranty: string
   rating: number
   reviewCount: number
-  featured?: boolean
-  new?: boolean
-  hot?: boolean
-  sku?: string
-  specifications?: Record<string, unknown>
+  isFeatured?: boolean
+  isNew?: boolean
+  isHot?: boolean
+  discount?: number
   createdAt: string
   updatedAt: string
+}
+
+export interface ProductVariant {
+  id: string
+  productId: string
+  name: string
+  type: "color" | "storage" | "ram" | "sim"
+  value: string
+  priceModifier: number
+  stock: number
+}
+
+export interface CreateProductRequest {
+  name: string
+  description: string
+  price: number
+  originalPrice?: number
+  images: string[]
+  thumbnail?: string
+  categoryId: string
+  brandId: string
+  variants: Omit<ProductVariant, "id" | "productId">[]
+  highlights: string[]
+  specifications: Record<string, string>
+  stock: number
+  sku: string
+  warranty: string
+  isFeatured?: boolean
+  isNew?: boolean
+  isHot?: boolean
+}
+
+export interface UpdateProductRequest {
+  name?: string
+  description?: string
+  price?: number
+  originalPrice?: number
+  images?: string[]
+  thumbnail?: string
+  categoryId?: string
+  brandId?: string
+  variants?: Omit<ProductVariant, "id" | "productId">[]
+  highlights?: string[]
+  specifications?: Record<string, string>
+  stock?: number
+  sku?: string
+  warranty?: string
+  isFeatured?: boolean
+  isNew?: boolean
+  isHot?: boolean
+  discount?: number
 }
 
 export interface ProductFilters {
@@ -158,34 +230,37 @@ export interface ProductFilters {
   maxPrice?: number
   rating?: number
   inStock?: boolean
-  search?: string
-  sortBy?: "newest" | "popular" | "price-low" | "price-high" | "rating"
-  page?: number
-  limit?: number
+  featured?: boolean
+  new?: boolean
+  hot?: boolean
 }
 
-// ==================== ORDER TYPES ====================
-export interface OrderItem {
-  productId: string
-  product?: Product
-  quantity: number
-  price: number
-  subtotal: number
-  variants?: Record<string, string>
+export interface ProductListResponse {
+  data: Product[]
+  pagination: PaginationMeta
+  filters?: ProductFilters
 }
 
+export interface ProductSearchResponse {
+  data: Product[]
+  pagination: PaginationMeta
+  query: string
+}
+
+// ==================== Order Types ====================
 export interface Order {
   id: string
+  orderNumber: string
   userId: string
   items: OrderItem[]
+  status: OrderStatus
   subtotal: number
-  tax: number
   shipping: number
-  discount?: number
+  discount: number
+  tax?: number
   total: number
-  status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled" | "returned"
-  paymentStatus: "pending" | "completed" | "failed"
-  paymentMethod: "card" | "bkash" | "nagad" | "bank" | "cod"
+  paymentMethod: string
+  paymentStatus: PaymentStatus
   shippingAddress: Address
   billingAddress?: Address
   notes?: string
@@ -194,126 +269,170 @@ export interface Order {
   updatedAt: string
 }
 
+export interface OrderItem {
+  id: string
+  productId: string
+  product?: Product
+  quantity: number
+  price: number
+  selectedVariants: Record<string, string>
+}
+
+export type OrderStatus = "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled" | "returned"
+export type PaymentStatus = "pending" | "paid" | "failed" | "refunded"
+
 export interface CreateOrderRequest {
-  items: OrderItem[]
+  items: {
+    productId: string
+    quantity: number
+    selectedVariants: Record<string, string>
+  }[]
   shippingAddressId: string
   billingAddressId?: string
   paymentMethod: string
-  couponCode?: string
   notes?: string
 }
 
-export interface OrderStatus {
-  status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled" | "returned"
+export interface UpdateOrderStatusRequest {
+  status: OrderStatus
   notes?: string
+  trackingNumber?: string
 }
 
-export interface EMICalculation {
+export interface OrderInvoiceResponse {
+  id: string
+  orderNumber: string
+  html: string
+  pdfUrl?: string
+}
+
+export interface CalculateEMIRequest {
   amount: number
   months: number
-  interestRate: number
+}
+
+export interface CalculateEMIResponse {
+  amount: number
+  months: number
   monthlyPayment: number
   totalPayment: number
-  totalInterest: number
+  interest: number
 }
 
-export interface EMICalculationRequest {
-  amount: number
-  months: number
-}
-
-// ==================== ADDRESS TYPES ====================
-export interface Address {
-  id?: string
-  userId?: string
-  type?: "shipping" | "billing"
-  fullName: string
-  phone: string
-  email?: string
-  street: string
-  city: string
-  state: string
-  zipCode: string
-  country?: string
-  isDefault?: boolean
-  createdAt?: string
-  updatedAt?: string
-}
-
-// ==================== WARRANTY TYPES ====================
+// ==================== Warranty Types ====================
 export interface Warranty {
   id: string
-  userId: string
+  orderId: string
   productId: string
   imei: string
-  type: "standard" | "care-plus"
+  startDate: string
+  endDate: string
   status: "active" | "expired" | "claimed"
-  activatedAt: string
-  expiresAt: string
+  logs: WarrantyLog[]
   createdAt: string
-}
-
-export interface WarrantyActivationRequest {
-  productId: string
-  imei: string
-  type: "standard" | "care-plus"
 }
 
 export interface WarrantyLog {
   id: string
   warrantyId: string
   action: string
-  notes?: string
+  description: string
   createdAt: string
 }
 
-// ==================== GIVEAWAY TYPES ====================
+export interface ActivateWarrantyRequest {
+  orderId: string
+  productId: string
+  imei: string
+}
+
+export interface WarrantyLookupResponse {
+  warranty: Warranty
+  product: Product
+  order: Order
+}
+
+// ==================== Giveaway Types ====================
 export interface GiveawayEntry {
   id: string
-  userId: string
-  email: string
   name: string
-  phone?: string
+  email: string
+  phone: string
+  productId: string
+  message?: string
   createdAt: string
 }
 
-export interface GiveawayEntryRequest {
-  email: string
+export interface CreateGiveawayEntryRequest {
   name: string
-  phone?: string
+  email: string
+  phone: string
+  productId: string
+  message?: string
 }
 
-// ==================== POLICY TYPES ====================
+export interface GiveawayListResponse {
+  data: GiveawayEntry[]
+  pagination: PaginationMeta
+}
+
+// ==================== Policy Types ====================
 export interface Policy {
   id: string
-  slug: string
   title: string
+  slug: string
   content: string
-  type: "privacy" | "terms" | "shipping" | "return" | "faq"
-  published: boolean
+  type: "privacy" | "terms" | "shipping" | "return" | "refund" | "warranty" | "custom"
+  isPublished: boolean
+  order?: number
   createdAt: string
   updatedAt: string
 }
 
-// ==================== FAQ TYPES ====================
+export interface CreatePolicyRequest {
+  title: string
+  content: string
+  type: Policy["type"]
+  isPublished?: boolean
+}
+
+export interface UpdatePolicyRequest {
+  title?: string
+  content?: string
+  type?: Policy["type"]
+  isPublished?: boolean
+}
+
+// ==================== FAQ Types ====================
 export interface FAQ {
   id: string
   question: string
   answer: string
   category?: string
+  productId?: string
   order?: number
-  published: boolean
+  isPublished: boolean
   createdAt: string
   updatedAt: string
 }
 
-export interface FAQRequest {
+export interface CreateFAQRequest {
   question: string
   answer: string
   category?: string
+  productId?: string
+  isPublished?: boolean
 }
 
-// ==================== REVIEW TYPES ====================
+export interface UpdateFAQRequest {
+  question?: string
+  answer?: string
+  category?: string
+  productId?: string
+  isPublished?: boolean
+}
+
+// ==================== Review Types ====================
 export interface Review {
   id: string
   productId: string
@@ -321,93 +440,135 @@ export interface Review {
   user?: User
   rating: number
   title: string
-  comment: string
+  content: string
+  images?: string[]
+  verified: boolean
   helpful: number
   unhelpful: number
-  verified: boolean
   createdAt: string
   updatedAt: string
 }
 
-export interface ReviewRequest {
+export interface CreateReviewRequest {
   productId: string
   rating: number
   title: string
-  comment: string
+  content: string
+  images?: string[]
 }
 
-// ==================== LOYALTY TYPES ====================
+export interface ReviewListResponse {
+  data: Review[]
+  pagination: PaginationMeta
+  averageRating: number
+  totalReviews: number
+}
+
+// ==================== Loyalty Types ====================
 export interface LoyaltyPoints {
   userId: string
-  balance: number
-  tier: "bronze" | "silver" | "gold"
-  redeemableAmount: number
-  history?: LoyaltyTransaction[]
+  totalPoints: number
+  availablePoints: number
+  redeemedPoints: number
+  history: LoyaltyTransaction[]
+  createdAt: string
+  updatedAt: string
 }
 
 export interface LoyaltyTransaction {
   id: string
   userId: string
-  type: "earn" | "redeem"
+  type: "earn" | "redeem" | "expire"
   points: number
-  reason: string
+  description: string
+  reference?: string
   createdAt: string
 }
 
-export interface RedeemRequest {
+export interface RedeemLoyaltyRequest {
   points: number
 }
 
-// ==================== SEO TYPES ====================
+export interface RedeemLoyaltyResponse {
+  transaction: LoyaltyTransaction
+  remainingPoints: number
+  discount: number
+}
+
+// ==================== SEO Types ====================
 export interface SEOMetadata {
   id: string
+  entityId: string
+  entityType: "product" | "category" | "brand"
   title: string
   description: string
   keywords: string[]
-  image?: string
-  canonical?: string
+  ogImage?: string
   ogTitle?: string
   ogDescription?: string
-  ogImage?: string
-  twitterCard?: string
+  canonicalUrl?: string
+  structuredData?: Record<string, unknown>
+  createdAt: string
+  updatedAt: string
 }
 
 export interface SitemapEntry {
-  loc: string
-  lastmod: string
-  changefreq: "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never"
+  url: string
+  lastModified: string
+  changeFrequency: "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never"
   priority: number
 }
 
-// ==================== MARKETING TYPES ====================
-export interface MarketingEmailRequest {
-  to: string
+// ==================== Marketing Types ====================
+export interface MarketingEmail {
+  to: string[]
+  cc?: string[]
+  bcc?: string[]
   subject: string
   template: string
-  variables?: Record<string, unknown>
+  templateVariables?: Record<string, unknown>
+  html?: string
 }
 
-// ==================== ADMIN TYPES ====================
+export interface SendMarketingEmailRequest {
+  emails: MarketingEmail[]
+  schedule?: string
+}
+
+export interface MarketingEmailResponse {
+  id: string
+  status: "sent" | "scheduled" | "failed"
+  sentAt?: string
+  scheduledAt?: string
+  failureReason?: string
+}
+
+// ==================== Admin Types ====================
 export interface DashboardStats {
   totalUsers: number
   totalOrders: number
   totalRevenue: number
   totalProducts: number
-  newOrdersToday: number
-  averageOrderValue: number
-  conversionRate: number
+  newUsersThisMonth: number
+  newOrdersThisMonth: number
+  revenueThisMonth: number
   topProducts: Product[]
   recentOrders: Order[]
 }
 
-export interface Analytics {
+export interface AnalyticsData {
   period: "day" | "week" | "month" | "year"
-  data: {
-    date: string
-    orders: number
-    revenue: number
-    users: number
-  }[]
+  dateRange: { start: string; end: string }
+  metrics: {
+    totalRevenue: number
+    totalOrders: number
+    averageOrderValue: number
+    totalUsers: number
+    conversionRate: number
+    topCategories: { name: string; sales: number }[]
+    topBrands: { name: string; sales: number }[]
+    salesTrend: { date: string; revenue: number; orders: number }[]
+  }
 }
 
 export interface StockAlert {
@@ -415,14 +576,41 @@ export interface StockAlert {
   productId: string
   product?: Product
   currentStock: number
-  minStock: number
-  threshold: "critical" | "low" | "warning"
+  threshold: number
+  status: "low" | "critical"
   createdAt: string
 }
 
-// ==================== ERROR TYPES ====================
+// ==================== Common Types ====================
+export interface PaginationMeta {
+  total: number
+  page: number
+  limit: number
+  pages: number
+}
+
+export interface PaginatedRequest {
+  page?: number
+  limit?: number
+}
+
+export interface ApiResponse<T> {
+  success: boolean
+  data?: T
+  error?: {
+    code: string
+    message: string
+    details?: unknown
+  }
+  meta?: {
+    pagination?: PaginationMeta
+    timestamp?: string
+  }
+}
+
 export interface ApiError {
   code: string
   message: string
   details?: unknown
+  status: number
 }

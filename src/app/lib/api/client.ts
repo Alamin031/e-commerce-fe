@@ -1,197 +1,87 @@
-import axios, {
-  AxiosInstance,
-  AxiosError,
-  InternalAxiosRequestConfig,
-  AxiosResponse,
-} from "axios"
-import { API_CONFIG } from "./config"
-import { TokenManager } from "./token-manager"
-import { ApiResponse } from "./types"
+import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from "axios"
+import { useAuthStore } from "@/store/auth-store"
 
-let refreshTokenRequest: Promise<string> | null = null
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001"
 
-class ApiClient {
-  private client: AxiosInstance
-  private isRefreshing = false
+export const apiClient: AxiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 30000,
+  headers: {
+    "Content-Type": "application/json",
+  },
+})
 
-  constructor() {
-    this.client = axios.create({
-      baseURL: API_CONFIG.baseURL,
-      timeout: API_CONFIG.timeout,
-      headers: API_CONFIG.headers,
-    })
+// Request interceptor to add token to headers
+apiClient.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    const authStore = useAuthStore.getState()
+    if (authStore.token) {
+      config.headers.Authorization = `Bearer ${authStore.token}`
+    }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  },
+)
 
-    this.setupInterceptors()
-  }
+// Response interceptor to handle errors and token refresh
+apiClient.interceptors.response.use(
+  (response) => {
+    return response
+  },
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
 
-  private setupInterceptors(): void {
-    // Request interceptor
-    this.client.interceptors.request.use(
-      (config: InternalAxiosRequestConfig) => {
-        const token = TokenManager.getToken()
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`
-        }
-        return config
-      },
-      (error) => {
-        return Promise.reject(error)
-      }
-    )
+    // Handle 401 Unauthorized - token expired or invalid
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true
 
-    // Response interceptor
-    this.client.interceptors.response.use(
-      (response: AxiosResponse) => {
-        return response
-      },
-      async (error: AxiosError) => {
-        const originalRequest = error.config as InternalAxiosRequestConfig & {
-          _retry?: boolean
-        }
+      try {
+        const authStore = useAuthStore.getState()
 
-        // Handle 401 Unauthorized
-        if (error.response?.status === 401 && !originalRequest._retry) {
-          if (this.isRefreshing) {
-            // Wait for the refresh request to complete
-            if (!refreshTokenRequest) {
-              refreshTokenRequest = this.performTokenRefresh()
-            }
-            try {
-              const token = await refreshTokenRequest
-              if (originalRequest.headers) {
-                originalRequest.headers.Authorization = `Bearer ${token}`
-              }
-              return this.client(originalRequest)
-            } catch (err) {
-              this.handleAuthError()
-              return Promise.reject(err)
-            }
-          }
+        // Attempt to refresh token if refresh token exists
+        if (authStore.token) {
+          // Clear auth state
+          authStore.logout()
 
-          this.isRefreshing = true
-          try {
-            refreshTokenRequest = this.performTokenRefresh()
-            const token = await refreshTokenRequest
-            refreshTokenRequest = null
-            this.isRefreshing = false
-
-            if (originalRequest.headers) {
-              originalRequest.headers.Authorization = `Bearer ${token}`
-            }
-            return this.client(originalRequest)
-          } catch (err) {
-            refreshTokenRequest = null
-            this.isRefreshing = false
-            this.handleAuthError()
-            return Promise.reject(err)
+          // Redirect to login
+          if (typeof window !== "undefined") {
+            window.location.href = "/auth/login"
           }
         }
+      } catch (refreshError) {
+        const authStore = useAuthStore.getState()
+        authStore.logout()
 
-        return Promise.reject(error)
+        if (typeof window !== "undefined") {
+          window.location.href = "/auth/login"
+        }
+
+        return Promise.reject(refreshError)
       }
-    )
-  }
-
-  private async performTokenRefresh(): Promise<string> {
-    try {
-      const refreshToken = TokenManager.getRefreshToken()
-      if (!refreshToken) {
-        throw new Error("No refresh token available")
-      }
-
-      const response = await this.client.post("/auth/refresh", {
-        refreshToken,
-      })
-
-      const { token, refreshToken: newRefreshToken } = response.data
-
-      TokenManager.setTokens(token, newRefreshToken || refreshToken)
-      return token
-    } catch (error) {
-      TokenManager.clearTokens()
-      throw error
     }
-  }
 
-  private handleAuthError(): void {
-    // Clear tokens and redirect to login
-    TokenManager.clearTokens()
-
-    // Dispatch logout event or redirect
-    if (typeof window !== "undefined") {
-      // You can dispatch a custom event or use localStorage to notify other tabs
-      window.dispatchEvent(
-        new CustomEvent("auth-error", {
-          detail: { message: "Authentication failed. Please login again." },
-        })
-      )
-      // Optionally redirect to login
-      // window.location.href = '/login'
+    // Handle 403 Forbidden
+    if (error.response?.status === 403) {
+      const message = (error.response.data as any)?.error?.message || "Access denied"
+      console.error("Access Denied:", message)
     }
-  }
 
-  public getInstance(): AxiosInstance {
-    return this.client
-  }
+    // Handle 404 Not Found
+    if (error.response?.status === 404) {
+      const message = (error.response.data as any)?.error?.message || "Resource not found"
+      console.error("Not Found:", message)
+    }
 
-  /**
-   * GET request
-   */
-  public get<T = unknown>(
-    url: string,
-    config?: InternalAxiosRequestConfig
-  ): Promise<AxiosResponse<ApiResponse<T>>> {
-    return this.client.get<ApiResponse<T>>(url, config)
-  }
+    // Handle 500 Server Error
+    if (error.response?.status === 500) {
+      const message = (error.response.data as any)?.error?.message || "Server error"
+      console.error("Server Error:", message)
+    }
 
-  /**
-   * POST request
-   */
-  public post<T = unknown>(
-    url: string,
-    data?: unknown,
-    config?: InternalAxiosRequestConfig
-  ): Promise<AxiosResponse<ApiResponse<T>>> {
-    return this.client.post<ApiResponse<T>>(url, data, config)
-  }
-
-  /**
-   * PATCH request
-   */
-  public patch<T = unknown>(
-    url: string,
-    data?: unknown,
-    config?: InternalAxiosRequestConfig
-  ): Promise<AxiosResponse<ApiResponse<T>>> {
-    return this.client.patch<ApiResponse<T>>(url, data, config)
-  }
-
-  /**
-   * PUT request
-   */
-  public put<T = unknown>(
-    url: string,
-    data?: unknown,
-    config?: InternalAxiosRequestConfig
-  ): Promise<AxiosResponse<ApiResponse<T>>> {
-    return this.client.put<ApiResponse<T>>(url, data, config)
-  }
-
-  /**
-   * DELETE request
-   */
-  public delete<T = unknown>(
-    url: string,
-    config?: InternalAxiosRequestConfig
-  ): Promise<AxiosResponse<ApiResponse<T>>> {
-    return this.client.delete<ApiResponse<T>>(url, config)
-  }
-}
-
-// Create singleton instance
-export const apiClient = new ApiClient()
-
-// Export the axios instance for advanced usage
-export const axiosInstance = apiClient.getInstance()
+    return Promise.reject(error)
+  },
+)
 
 export default apiClient
